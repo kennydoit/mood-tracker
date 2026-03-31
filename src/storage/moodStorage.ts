@@ -1,5 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MoodEntry } from '../types';
+import { toDateKey } from '../utils/dateUtils';
+
+export { toDateKey } from '../utils/dateUtils';
 
 const STORAGE_KEY = '@mood_tracker_entries';
 
@@ -50,16 +53,11 @@ export async function loadEntriesSorted(): Promise<MoodEntry[]> {
   );
 }
 
-/** Converts a Date to a 'YYYY-MM-DD' key */
-export function toDateKey(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
-
 /** Loads a single entry for a given calendar date (or null if none) */
 export async function loadEntryForDate(date: Date): Promise<MoodEntry | null> {
   const key = toDateKey(date);
   const entries = await loadEntries();
-  return entries.find((e) => e.date.slice(0, 10) === key) ?? null;
+  return entries.find((e) => toDateKey(new Date(e.date)) === key) ?? null;
 }
 
 /**
@@ -70,7 +68,7 @@ export async function loadDateKeyMap(): Promise<Record<string, MoodEntry>> {
   const entries = await loadEntriesSorted(); // newest first
   const map: Record<string, MoodEntry> = {};
   for (const entry of entries) {
-    const key = entry.date.slice(0, 10);
+    const key = toDateKey(new Date(entry.date));
     if (!map[key]) map[key] = entry; // keep the newest per day
   }
   return map;
@@ -87,7 +85,7 @@ export async function saveEntryForDate(
 ): Promise<void> {
   const key = toDateKey(date);
   const entries = await loadEntries();
-  const existingIndex = entries.findIndex((e) => e.date.slice(0, 10) === key);
+  const existingIndex = entries.findIndex((e) => toDateKey(new Date(e.date)) === key);
 
   if (existingIndex >= 0) {
     entries[existingIndex] = {

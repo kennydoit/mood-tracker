@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
-import { toDateKey } from '../storage/moodStorage';
+import { toDateKey } from '../utils/dateUtils';
 
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const ITEM_WIDTH = 44;

@@ -19,8 +19,8 @@ import {
   loadEntryForDate,
   loadDateKeyMap,
   saveEntryForDate,
-  toDateKey,
 } from '../storage/moodStorage';
+import { toDateKey } from '../utils/dateUtils';
 import { calculateWellnessScore, wellnessColor, wellnessLabel } from '../utils/wellness';
 
 const defaultValues = (): Record<string, number> => {
