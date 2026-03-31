@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,9 +10,17 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { format } from 'date-fns';
 import { POSITIVE_METRICS, NEGATIVE_METRICS } from '../constants/moods';
 import MoodSlider from '../components/MoodSlider';
-import { createEntry, saveEntry } from '../storage/moodStorage';
+import WeekStrip from '../components/WeekStrip';
+import {
+  loadEntryForDate,
+  loadDateKeyMap,
+  saveEntryForDate,
+  toDateKey,
+} from '../storage/moodStorage';
 import { calculateWellnessScore, wellnessColor, wellnessLabel } from '../utils/wellness';
 
 const defaultValues = (): Record<string, number> => {
@@ -23,23 +31,58 @@ const defaultValues = (): Record<string, number> => {
   return vals;
 };
 
+function todayMidnight(): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 export default function LogScreen() {
+  const [selectedDate, setSelectedDate] = useState<Date>(todayMidnight());
+  const [entryDateKeys, setEntryDateKeys] = useState<Set<string>>(new Set());
   const [values, setValues] = useState<Record<string, number>>(defaultValues());
   const [notes, setNotes] = useState('');
+  const [existingEntryId, setExistingEntryId] = useState<string | null>(null);
   const [showNegative, setShowNegative] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Reload the dot-map whenever the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadDateKeyMap().then((map) => setEntryDateKeys(new Set(Object.keys(map))));
+    }, []),
+  );
+
+  // Whenever selected date changes, load that day's entry (or reset to defaults)
+  useEffect(() => {
+    loadEntryForDate(selectedDate).then((entry) => {
+      if (entry) {
+        setValues(entry.values);
+        setNotes(entry.notes ?? '');
+        setExistingEntryId(entry.id);
+      } else {
+        setValues(defaultValues());
+        setNotes('');
+        setExistingEntryId(null);
+      }
+    });
+  }, [selectedDate]);
 
   const setValue = (key: string, val: number) =>
     setValues((prev) => ({ ...prev, [key]: val }));
 
+  const handleSelectDate = (date: Date) => {
+    setSelectedDate(date);
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
-      const entry = createEntry(values, notes.trim() || undefined);
-      await saveEntry(entry);
+      await saveEntryForDate(selectedDate, values, notes.trim() || undefined);
+      // Refresh dot map
+      const map = await loadDateKeyMap();
+      setEntryDateKeys(new Set(Object.keys(map)));
       Alert.alert('Saved!', 'Your mood has been logged.', [{ text: 'OK' }]);
-      setValues(defaultValues());
-      setNotes('');
     } catch {
       Alert.alert('Error', 'Could not save entry. Please try again.');
     } finally {
@@ -50,17 +93,38 @@ export default function LogScreen() {
   const score = calculateWellnessScore(values);
   const scoreColor = wellnessColor(score);
   const scoreLabel = wellnessLabel(score);
+  const isToday = toDateKey(selectedDate) === toDateKey(new Date());
+  const isEditing = !!existingEntryId;
 
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      {/* Week strip — fixed above the scrollable content */}
+      <WeekStrip
+        selectedDateKey={toDateKey(selectedDate)}
+        entryDateKeys={entryDateKeys}
+        onSelectDate={handleSelectDate}
+      />
+
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
+        {/* Date heading */}
+        <View style={styles.dateHeading}>
+          <Text style={styles.dateHeadingText}>
+            {isToday ? 'Today' : format(selectedDate, 'EEEE, MMM d')}
+          </Text>
+          {isEditing && (
+            <View style={styles.editingBadge}>
+              <Text style={styles.editingBadgeText}>Editing</Text>
+            </View>
+          )}
+        </View>
+
         {/* Wellness Score banner */}
         <View style={[styles.wellnessBanner, { borderColor: scoreColor }]}>
           <View style={styles.wellnessLeft}>
@@ -137,7 +201,9 @@ export default function LogScreen() {
           disabled={saving}
           activeOpacity={0.85}
         >
-          <Text style={styles.saveText}>{saving ? 'Saving…' : 'Save Entry'}</Text>
+          <Text style={styles.saveText}>
+            {saving ? 'Saving…' : isEditing ? 'Update Entry' : 'Save Entry'}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -148,6 +214,30 @@ const styles = StyleSheet.create({
   scroll: {
     flex: 1,
     backgroundColor: '#fafafa',
+  },
+  dateHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 8,
+  },
+  dateHeadingText: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#111',
+  },
+  editingBadge: {
+    backgroundColor: '#FF9800',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  editingBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#fff',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   wellnessBanner: {
     backgroundColor: '#fff',
