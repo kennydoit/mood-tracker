@@ -13,7 +13,9 @@ import { format } from 'date-fns';
 import { loadEntriesSorted } from '../storage/moodStorage';
 import { POSITIVE_METRICS, NEGATIVE_METRICS } from '../constants/moods';
 import { MoodEntry, MoodMetric } from '../types';
+import { calculateWellnessScore, wellnessColor } from '../utils/wellness';
 
+const WELLNESS_KEY = 'wellness';
 const ALL_METRICS = [...POSITIVE_METRICS, ...NEGATIVE_METRICS];
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -21,12 +23,17 @@ function MetricChart({
   metric,
   entries,
 }: {
-  metric: MoodMetric;
+  metric: MoodMetric | { key: string; label: string; color: string };
   entries: MoodEntry[];
 }) {
-  // Take last 14 entries that have this metric
+  const isWellness = metric.key === WELLNESS_KEY;
+
   const relevant = entries
-    .filter((e) => e.values[metric.key] !== undefined)
+    .filter((e) =>
+      isWellness
+        ? true
+        : e.values[metric.key] !== undefined,
+    )
     .slice(0, 14)
     .reverse();
 
@@ -38,11 +45,15 @@ function MetricChart({
     );
   }
 
+  const chartData = isWellness
+    ? relevant.map((e) => calculateWellnessScore(e.values))
+    : relevant.map((e) => e.values[metric.key]);
+
   const data = {
     labels: relevant.map((e) => format(new Date(e.date), 'M/d')),
     datasets: [
       {
-        data: relevant.map((e) => e.values[metric.key]),
+        data: chartData,
         color: () => metric.color,
         strokeWidth: 2,
       },
@@ -54,10 +65,10 @@ function MetricChart({
       data={data}
       width={SCREEN_WIDTH - 40}
       height={160}
-      yAxisSuffix=""
+      yAxisSuffix={isWellness ? '' : ''}
       yAxisInterval={1}
       fromZero
-      segments={5}
+      segments={isWellness ? 10 : 5}
       chartConfig={{
         backgroundGradientFrom: '#fff',
         backgroundGradientTo: '#fff',
@@ -75,7 +86,7 @@ function MetricChart({
 
 export default function TrendsScreen() {
   const [entries, setEntries] = useState<MoodEntry[]>([]);
-  const [selectedKey, setSelectedKey] = useState<string>(POSITIVE_METRICS[0].key);
+  const [selectedKey, setSelectedKey] = useState<string>(WELLNESS_KEY);
 
   useFocusEffect(
     useCallback(() => {
@@ -83,11 +94,31 @@ export default function TrendsScreen() {
     }, []),
   );
 
-  const selectedMetric = ALL_METRICS.find((m) => m.key === selectedKey)!;
+  const isWellness = selectedKey === WELLNESS_KEY;
+  const selectedMetric = isWellness
+    ? { key: WELLNESS_KEY, label: 'Wellness Score', color: '#00BCD4' }
+    : ALL_METRICS.find((m) => m.key === selectedKey)!;
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-      {/* Metric selector */}
+      {/* Wellness Score selector (top, prominent) */}
+      <TouchableOpacity
+        onPress={() => setSelectedKey(WELLNESS_KEY)}
+        style={[
+          styles.wellnessChip,
+          isWellness && styles.wellnessChipActive,
+        ]}
+        activeOpacity={0.8}
+      >
+        <Text style={[styles.wellnessChipText, isWellness && styles.wellnessChipTextActive]}>
+          🌿 Wellness Score
+        </Text>
+        <Text style={[styles.wellnessChipSub, isWellness && { color: '#fff' }]}>
+          Weighted average of all metrics
+        </Text>
+      </TouchableOpacity>
+
+      {/* Individual metric selectors */}
       <Text style={styles.sectionLabel}>Positive</Text>
       <View style={styles.chipRow}>
         {POSITIVE_METRICS.map((m) => {
@@ -143,9 +174,9 @@ export default function TrendsScreen() {
         <View style={styles.statsCard}>
           <Text style={styles.statsTitle}>Stats for {selectedMetric.label}</Text>
           {(() => {
-            const vals = entries
-              .map((e) => e.values[selectedKey])
-              .filter((v) => v !== undefined);
+            const vals = isWellness
+              ? entries.map((e) => calculateWellnessScore(e.values))
+              : entries.map((e) => e.values[selectedKey]).filter((v) => v !== undefined);
             if (vals.length === 0) return null;
             const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
             const max = Math.max(...vals);
@@ -153,7 +184,7 @@ export default function TrendsScreen() {
             return (
               <View style={styles.statsRow}>
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{avg.toFixed(1)}</Text>
+                  <Text style={styles.statValue}>{avg.toFixed(isWellness ? 0 : 1)}</Text>
                   <Text style={styles.statLabel}>Average</Text>
                 </View>
                 <View style={styles.statItem}>
@@ -275,5 +306,34 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#aaa',
     marginTop: 2,
+  },
+  wellnessChip: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: '#00BCD4',
+    padding: 14,
+    marginBottom: 14,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  wellnessChipActive: {
+    backgroundColor: '#00BCD4',
+  },
+  wellnessChipText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#00BCD4',
+  },
+  wellnessChipTextActive: {
+    color: '#fff',
+  },
+  wellnessChipSub: {
+    fontSize: 11,
+    color: '#aaa',
+    marginTop: 1,
   },
 });

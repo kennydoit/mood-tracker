@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import { MoodEntry } from '../types';
 import { loadEntriesSorted, deleteEntry } from '../storage/moodStorage';
 import { POSITIVE_METRICS, NEGATIVE_METRICS } from '../constants/moods';
+import { calculateWellnessScore, wellnessColor, wellnessLabel } from '../utils/wellness';
 
 const ALL_METRICS = [...POSITIVE_METRICS, ...NEGATIVE_METRICS];
 
@@ -25,19 +26,26 @@ function EntryCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const date = new Date(entry.date);
+  const score = calculateWellnessScore(entry.values);
+  const scoreColor = wellnessColor(score);
+  const scoreLabel = wellnessLabel(score);
 
   return (
     <TouchableOpacity
-      style={styles.card}
+      style={[styles.card, { borderLeftColor: scoreColor, borderLeftWidth: 4 }]}
       onPress={() => setExpanded((v) => !v)}
       activeOpacity={0.85}
     >
       <View style={styles.cardHeader}>
-        <View>
+        <View style={{ flex: 1 }}>
           <Text style={styles.cardDate}>{format(date, 'EEEE, MMM d yyyy')}</Text>
           <Text style={styles.cardTime}>{format(date, 'h:mm a')}</Text>
         </View>
-        <TouchableOpacity onPress={onDelete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <View style={styles.wellnessBadge}>
+          <Text style={[styles.wellnessBadgeScore, { color: scoreColor }]}>{score}</Text>
+          <Text style={[styles.wellnessBadgeLabel, { color: scoreColor }]}>{scoreLabel}</Text>
+        </View>
+        <TouchableOpacity onPress={onDelete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={{ marginLeft: 8 }}>
           <Text style={styles.deleteIcon}>✕</Text>
         </TouchableOpacity>
       </View>
@@ -153,6 +161,21 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
+  },
+  wellnessBadge: {
+    alignItems: 'flex-end',
+    marginRight: 4,
+  },
+  wellnessBadgeScore: {
+    fontSize: 22,
+    fontWeight: '900',
+    lineHeight: 24,
+  },
+  wellnessBadgeLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
   cardHeader: {
     flexDirection: 'row',

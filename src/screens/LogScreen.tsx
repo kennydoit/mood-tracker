@@ -13,6 +13,7 @@ import {
 import { POSITIVE_METRICS, NEGATIVE_METRICS } from '../constants/moods';
 import MoodSlider from '../components/MoodSlider';
 import { createEntry, saveEntry } from '../storage/moodStorage';
+import { calculateWellnessScore, wellnessColor, wellnessLabel } from '../utils/wellness';
 
 const defaultValues = (): Record<string, number> => {
   const vals: Record<string, number> = {};
@@ -46,6 +47,10 @@ export default function LogScreen() {
     }
   };
 
+  const score = calculateWellnessScore(values);
+  const scoreColor = wellnessColor(score);
+  const scoreLabel = wellnessLabel(score);
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -56,6 +61,18 @@ export default function LogScreen() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
+        {/* Wellness Score banner */}
+        <View style={[styles.wellnessBanner, { borderColor: scoreColor }]}>
+          <View style={styles.wellnessLeft}>
+            <Text style={styles.wellnessTitle}>Wellness Score</Text>
+            <Text style={styles.wellnessSubtitle}>Weighted average of all metrics</Text>
+          </View>
+          <View style={styles.wellnessRight}>
+            <Text style={[styles.wellnessScore, { color: scoreColor }]}>{score}</Text>
+            <Text style={[styles.wellnessLabel, { color: scoreColor }]}>{scoreLabel}</Text>
+          </View>
+        </View>
+
         {/* Positive section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Positive States</Text>
@@ -131,6 +148,48 @@ const styles = StyleSheet.create({
   scroll: {
     flex: 1,
     backgroundColor: '#fafafa',
+  },
+  wellnessBanner: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    borderWidth: 2,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
+  wellnessLeft: {
+    flex: 1,
+  },
+  wellnessTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#111',
+  },
+  wellnessSubtitle: {
+    fontSize: 11,
+    color: '#aaa',
+    marginTop: 2,
+  },
+  wellnessRight: {
+    alignItems: 'flex-end',
+  },
+  wellnessScore: {
+    fontSize: 48,
+    fontWeight: '900',
+    lineHeight: 52,
+  },
+  wellnessLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   content: {
     padding: 16,
