@@ -1,0 +1,254 @@
+import React, { useCallback, useState } from 'react';
+import {
+  View,
+  Text,
+  Switch,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  Platform,
+} from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import {
+  ReminderSettings,
+  loadReminderSettings,
+  saveReminderSettings,
+  scheduleDailyReminder,
+  requestPermissions,
+} from '../notifications/reminderService';
+
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
+const MINUTES = [0, 15, 30, 45];
+
+function pad(n: number) {
+  return n.toString().padStart(2, '0');
+}
+
+function formatTime(hour: number, minute: number) {
+  const ampm = hour < 12 ? 'AM' : 'PM';
+  const h = hour % 12 === 0 ? 12 : hour % 12;
+  return `${h}:${pad(minute)} ${ampm}`;
+}
+
+export default function SettingsScreen() {
+  const [settings, setSettings] = useState<ReminderSettings>({
+    enabled: false,
+    hour: 20,
+    minute: 0,
+  });
+
+  useFocusEffect(
+    useCallback(() => {
+      loadReminderSettings().then(setSettings);
+    }, []),
+  );
+
+  const handleToggle = async (value: boolean) => {
+    if (value) {
+      const granted = await requestPermissions();
+      if (!granted) {
+        Alert.alert(
+          'Permission Required',
+          'Please allow notifications in your device settings to receive daily reminders.',
+        );
+        return;
+      }
+    }
+    const updated = { ...settings, enabled: value };
+    setSettings(updated);
+    await saveReminderSettings(updated);
+    await scheduleDailyReminder(updated);
+  };
+
+  const handleHourChange = async (hour: number) => {
+    const updated = { ...settings, hour };
+    setSettings(updated);
+    await saveReminderSettings(updated);
+    if (updated.enabled) await scheduleDailyReminder(updated);
+  };
+
+  const handleMinuteChange = async (minute: number) => {
+    const updated = { ...settings, minute };
+    setSettings(updated);
+    await saveReminderSettings(updated);
+    if (updated.enabled) await scheduleDailyReminder(updated);
+  };
+
+  return (
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      {/* Reminder toggle */}
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.rowTitle}>Daily Reminder</Text>
+            <Text style={styles.rowSub}>
+              Get a notification to log your mood each day
+            </Text>
+          </View>
+          <Switch
+            value={settings.enabled}
+            onValueChange={handleToggle}
+            trackColor={{ false: '#ddd', true: '#5B7FFF' }}
+            thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
+          />
+        </View>
+      </View>
+
+      {/* Time picker */}
+      {settings.enabled && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Reminder Time</Text>
+          <Text style={styles.timeDisplay}>
+            {formatTime(settings.hour, settings.minute)}
+          </Text>
+
+          <Text style={styles.pickerLabel}>Hour</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.pickerRow}>
+              {HOURS.map((h) => (
+                <TouchableOpacity
+                  key={h}
+                  onPress={() => handleHourChange(h)}
+                  style={[
+                    styles.pickerChip,
+                    settings.hour === h && styles.pickerChipActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.pickerChipText,
+                      settings.hour === h && styles.pickerChipTextActive,
+                    ]}
+                  >
+                    {pad(h)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+
+          <Text style={[styles.pickerLabel, { marginTop: 12 }]}>Minute</Text>
+          <View style={styles.pickerRow}>
+            {MINUTES.map((m) => (
+              <TouchableOpacity
+                key={m}
+                onPress={() => handleMinuteChange(m)}
+                style={[
+                  styles.pickerChip,
+                  settings.minute === m && styles.pickerChipActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.pickerChipText,
+                    settings.minute === m && styles.pickerChipTextActive,
+                  ]}
+                >
+                  :{pad(m)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* About */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>About</Text>
+        <Text style={styles.aboutText}>Mood Tracker v1.0</Text>
+        <Text style={styles.aboutSub}>
+          Track your daily emotional and physical wellbeing. All data is stored
+          locally on your device.
+        </Text>
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  scroll: { flex: 1, backgroundColor: '#fafafa' },
+  content: { padding: 16, paddingBottom: 40 },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  rowTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111',
+  },
+  rowSub: {
+    fontSize: 12,
+    color: '#aaa',
+    marginTop: 2,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111',
+    marginBottom: 10,
+  },
+  timeDisplay: {
+    fontSize: 32,
+    fontWeight: '300',
+    color: '#5B7FFF',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  pickerLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#aaa',
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  pickerRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  pickerChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#f5f5f5',
+  },
+  pickerChipActive: {
+    backgroundColor: '#5B7FFF',
+    borderColor: '#5B7FFF',
+  },
+  pickerChipText: {
+    fontSize: 13,
+    color: '#555',
+    fontWeight: '500',
+  },
+  pickerChipTextActive: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  aboutText: {
+    fontSize: 15,
+    color: '#333',
+    fontWeight: '600',
+  },
+  aboutSub: {
+    fontSize: 13,
+    color: '#aaa',
+    marginTop: 4,
+    lineHeight: 18,
+  },
+});

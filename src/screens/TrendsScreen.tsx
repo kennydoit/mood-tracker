@@ -1,0 +1,279 @@
+import React, { useCallback, useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+} from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { LineChart } from 'react-native-chart-kit';
+import { format } from 'date-fns';
+import { loadEntriesSorted } from '../storage/moodStorage';
+import { POSITIVE_METRICS, NEGATIVE_METRICS } from '../constants/moods';
+import { MoodEntry, MoodMetric } from '../types';
+
+const ALL_METRICS = [...POSITIVE_METRICS, ...NEGATIVE_METRICS];
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
+function MetricChart({
+  metric,
+  entries,
+}: {
+  metric: MoodMetric;
+  entries: MoodEntry[];
+}) {
+  // Take last 14 entries that have this metric
+  const relevant = entries
+    .filter((e) => e.values[metric.key] !== undefined)
+    .slice(0, 14)
+    .reverse();
+
+  if (relevant.length < 2) {
+    return (
+      <View style={styles.chartPlaceholder}>
+        <Text style={styles.placeholderText}>Not enough data yet (need 2+ entries)</Text>
+      </View>
+    );
+  }
+
+  const data = {
+    labels: relevant.map((e) => format(new Date(e.date), 'M/d')),
+    datasets: [
+      {
+        data: relevant.map((e) => e.values[metric.key]),
+        color: () => metric.color,
+        strokeWidth: 2,
+      },
+    ],
+  };
+
+  return (
+    <LineChart
+      data={data}
+      width={SCREEN_WIDTH - 40}
+      height={160}
+      yAxisSuffix=""
+      yAxisInterval={1}
+      fromZero
+      segments={5}
+      chartConfig={{
+        backgroundGradientFrom: '#fff',
+        backgroundGradientTo: '#fff',
+        decimalPlaces: 0,
+        color: () => metric.color,
+        labelColor: () => '#aaa',
+        propsForDots: { r: '4', strokeWidth: '2', stroke: metric.color },
+        propsForBackgroundLines: { stroke: '#f0f0f0' },
+      }}
+      bezier
+      style={styles.chartStyle}
+    />
+  );
+}
+
+export default function TrendsScreen() {
+  const [entries, setEntries] = useState<MoodEntry[]>([]);
+  const [selectedKey, setSelectedKey] = useState<string>(POSITIVE_METRICS[0].key);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadEntriesSorted().then(setEntries);
+    }, []),
+  );
+
+  const selectedMetric = ALL_METRICS.find((m) => m.key === selectedKey)!;
+
+  return (
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      {/* Metric selector */}
+      <Text style={styles.sectionLabel}>Positive</Text>
+      <View style={styles.chipRow}>
+        {POSITIVE_METRICS.map((m) => {
+          const active = m.key === selectedKey;
+          return (
+            <TouchableOpacity
+              key={m.key}
+              onPress={() => setSelectedKey(m.key)}
+              style={[
+                styles.metricChip,
+                active && { backgroundColor: m.color, borderColor: m.color },
+              ]}
+            >
+              <Text style={[styles.metricChipText, active && styles.metricChipTextActive]}>
+                {m.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      <Text style={styles.sectionLabel}>Negative</Text>
+      <View style={styles.chipRow}>
+        {NEGATIVE_METRICS.map((m) => {
+          const active = m.key === selectedKey;
+          return (
+            <TouchableOpacity
+              key={m.key}
+              onPress={() => setSelectedKey(m.key)}
+              style={[
+                styles.metricChip,
+                active && { backgroundColor: m.color, borderColor: m.color },
+              ]}
+            >
+              <Text style={[styles.metricChipText, active && styles.metricChipTextActive]}>
+                {m.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* Chart */}
+      <View style={styles.chartCard}>
+        <Text style={[styles.chartTitle, { color: selectedMetric.color }]}>
+          {selectedMetric.label} — Last 14 Entries
+        </Text>
+        <MetricChart metric={selectedMetric} entries={entries} />
+      </View>
+
+      {/* Stats */}
+      {entries.length > 0 && (
+        <View style={styles.statsCard}>
+          <Text style={styles.statsTitle}>Stats for {selectedMetric.label}</Text>
+          {(() => {
+            const vals = entries
+              .map((e) => e.values[selectedKey])
+              .filter((v) => v !== undefined);
+            if (vals.length === 0) return null;
+            const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+            const max = Math.max(...vals);
+            const min = Math.min(...vals);
+            return (
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{avg.toFixed(1)}</Text>
+                  <Text style={styles.statLabel}>Average</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statValue, { color: selectedMetric.color }]}>{max}</Text>
+                  <Text style={styles.statLabel}>Highest</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{min}</Text>
+                  <Text style={styles.statLabel}>Lowest</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{vals.length}</Text>
+                  <Text style={styles.statLabel}>Entries</Text>
+                </View>
+              </View>
+            );
+          })()}
+        </View>
+      )}
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  scroll: { flex: 1, backgroundColor: '#fafafa' },
+  content: { padding: 16, paddingBottom: 40 },
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#aaa',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+    marginTop: 8,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 4,
+  },
+  metricChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#ddd',
+    backgroundColor: '#fff',
+  },
+  metricChipText: {
+    fontSize: 13,
+    color: '#555',
+    fontWeight: '500',
+  },
+  metricChipTextActive: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  chartCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  chartTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  chartStyle: {
+    borderRadius: 8,
+    marginLeft: -8,
+  },
+  chartPlaceholder: {
+    height: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  placeholderText: {
+    fontSize: 13,
+    color: '#bbb',
+    fontStyle: 'italic',
+  },
+  statsCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  statsTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#111',
+    marginBottom: 12,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#333',
+  },
+  statLabel: {
+    fontSize: 11,
+    color: '#aaa',
+    marginTop: 2,
+  },
+});
