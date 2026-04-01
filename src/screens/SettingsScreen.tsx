@@ -170,21 +170,20 @@ export default function SettingsScreen() {
 
       {/* Appearance */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Appearance</Text>
-        {(['light', 'dark'] as ThemeMode[]).map((m) => (
-          <TouchableOpacity
-            key={m}
-            style={styles.habitRow}
-            onPress={() => setMode(m)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.habitEmoji}>{m === 'light' ? '☀️' : '🌙'}</Text>
-            <Text style={styles.habitLabel}>{m === 'light' ? 'Light' : 'Dark'}</Text>
-            <View style={[styles.checkbox, mode === m && styles.checkboxActive]}>
-              {mode === m && <Text style={styles.checkmark}>✓</Text>}
-            </View>
-          </TouchableOpacity>
-        ))}
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.rowTitle}>Dark Mode</Text>
+            <Text style={styles.rowSub}>
+              {mode === 'dark' ? 'Currently using dark theme' : 'Currently using light theme'}
+            </Text>
+          </View>
+          <Switch
+            value={mode === 'dark'}
+            onValueChange={(value) => setMode(value ? 'dark' : 'light')}
+            trackColor={{ false: '#ddd', true: '#5B7FFF' }}
+            thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
+          />
+        </View>
       </View>
 
       {/* Habits to Track */}
