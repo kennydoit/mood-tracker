@@ -23,6 +23,7 @@ import {
 import { loadTrackedHabits } from '../storage/habitSettings';
 import { toDateKey } from '../utils/dateUtils';
 import { calculateWellnessScore, calculateHabitScore, wellnessColor, wellnessLabel } from '../utils/wellness';
+import { useTheme, ThemeColors } from '../theme';
 
 const defaultValues = (): Record<string, number> => {
   const vals: Record<string, number> = {};
@@ -39,6 +40,8 @@ function todayMidnight(): Date {
 }
 
 export default function LogScreen() {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const [selectedDate, setSelectedDate] = useState<Date>(todayMidnight());
   const [entryDateKeys, setEntryDateKeys] = useState<Set<string>>(new Set());
   const [values, setValues] = useState<Record<string, number>>(defaultValues());
@@ -257,199 +260,201 @@ export default function LogScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  fixedHeader: {
-    backgroundColor: '#fafafa',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 4,
-  },
-  scroll: {
-    flex: 1,
-    backgroundColor: '#fafafa',
-  },
-  dateHeading: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    gap: 8,
-  },
-  dateHeadingText: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#111',
-  },
-  editingBadge: {
-    backgroundColor: '#FF9800',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  editingBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#fff',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  wellnessBanner: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 2,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 3,
-  },
-  wellnessLeft: {
-    flex: 1,
-  },
-  wellnessTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#111',
-  },
-  wellnessSubtitle: {
-    fontSize: 11,
-    color: '#aaa',
-    marginTop: 2,
-  },
-  wellnessRight: {
-    alignItems: 'flex-end',
-  },
-  wellnessScore: {
-    fontSize: 48,
-    fontWeight: '900',
-    lineHeight: 52,
-  },
-  wellnessLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  content: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  section: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#111',
-    marginBottom: 2,
-  },
-  sectionSub: {
-    fontSize: 12,
-    color: '#aaa',
-    marginBottom: 12,
-  },
-  toggleButton: {
-    alignItems: 'center',
-    paddingVertical: 10,
-    marginBottom: 12,
-  },
-  toggleText: {
-    fontSize: 15,
-    color: '#5B7FFF',
-    fontWeight: '600',
-  },
-  notesInput: {
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 14,
-    color: '#333',
-    minHeight: 90,
-    backgroundColor: '#fafafa',
-  },
-  habitHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 2,
-  },
-  habitScoreBadge: {
-    backgroundColor: '#5B7FFF',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  habitScoreText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  habitRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f5f5f5',
-  },
-  habitCheckbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#ddd',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f5f5f5',
-    marginRight: 10,
-  },
-  habitCheckboxChecked: {
-    backgroundColor: '#5B7FFF',
-    borderColor: '#5B7FFF',
-  },
-  habitCheckmark: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  habitEmoji: {
-    fontSize: 18,
-    marginRight: 8,
-  },
-  habitLabel: {
-    fontSize: 15,
-    color: '#333',
-    fontWeight: '500',
-  },
-  habitLabelChecked: {
-    color: '#5B7FFF',
-    fontWeight: '700',
-  },
-  saveButton: {
-    backgroundColor: '#5B7FFF',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  saveButtonDisabled: {
-    opacity: 0.6,
-  },
-  saveText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '700',
-  },
-});
+function makeStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    fixedHeader: {
+      backgroundColor: c.bg,
+      paddingHorizontal: 16,
+      paddingTop: 12,
+      paddingBottom: 4,
+    },
+    scroll: {
+      flex: 1,
+      backgroundColor: c.bg,
+    },
+    dateHeading: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 10,
+      gap: 8,
+    },
+    dateHeadingText: {
+      fontSize: 20,
+      fontWeight: '800',
+      color: c.textPrimary,
+    },
+    editingBadge: {
+      backgroundColor: '#FF9800',
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+    },
+    editingBadgeText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: '#fff',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    wellnessBanner: {
+      backgroundColor: c.card,
+      borderRadius: 16,
+      borderWidth: 2,
+      padding: 16,
+      marginBottom: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      shadowColor: c.shadow,
+      shadowOpacity: 0.06,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 3 },
+      elevation: 3,
+    },
+    wellnessLeft: {
+      flex: 1,
+    },
+    wellnessTitle: {
+      fontSize: 18,
+      fontWeight: '800',
+      color: c.textPrimary,
+    },
+    wellnessSubtitle: {
+      fontSize: 11,
+      color: c.textMuted,
+      marginTop: 2,
+    },
+    wellnessRight: {
+      alignItems: 'flex-end',
+    },
+    wellnessScore: {
+      fontSize: 48,
+      fontWeight: '900',
+      lineHeight: 52,
+    },
+    wellnessLabel: {
+      fontSize: 13,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    content: {
+      padding: 16,
+      paddingBottom: 40,
+    },
+    section: {
+      backgroundColor: c.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      shadowColor: c.shadow,
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 2,
+    },
+    sectionTitle: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: c.textPrimary,
+      marginBottom: 2,
+    },
+    sectionSub: {
+      fontSize: 12,
+      color: c.textMuted,
+      marginBottom: 12,
+    },
+    toggleButton: {
+      alignItems: 'center',
+      paddingVertical: 10,
+      marginBottom: 12,
+    },
+    toggleText: {
+      fontSize: 15,
+      color: c.accent,
+      fontWeight: '600',
+    },
+    notesInput: {
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 8,
+      padding: 10,
+      fontSize: 14,
+      color: c.textPrimary,
+      minHeight: 90,
+      backgroundColor: c.inputBg,
+    },
+    habitHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 2,
+    },
+    habitScoreBadge: {
+      backgroundColor: c.accent,
+      borderRadius: 10,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+    },
+    habitScoreText: {
+      color: '#fff',
+      fontSize: 13,
+      fontWeight: '700',
+    },
+    habitRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: c.borderLight,
+    },
+    habitCheckbox: {
+      width: 24,
+      height: 24,
+      borderRadius: 6,
+      borderWidth: 2,
+      borderColor: c.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.cardAlt,
+      marginRight: 10,
+    },
+    habitCheckboxChecked: {
+      backgroundColor: c.accent,
+      borderColor: c.accent,
+    },
+    habitCheckmark: {
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: '700',
+    },
+    habitEmoji: {
+      fontSize: 18,
+      marginRight: 8,
+    },
+    habitLabel: {
+      fontSize: 15,
+      color: c.textPrimary,
+      fontWeight: '500',
+    },
+    habitLabelChecked: {
+      color: c.accent,
+      fontWeight: '700',
+    },
+    saveButton: {
+      backgroundColor: c.accent,
+      borderRadius: 12,
+      paddingVertical: 16,
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    saveButtonDisabled: {
+      opacity: 0.6,
+    },
+    saveText: {
+      color: '#fff',
+      fontSize: 17,
+      fontWeight: '700',
+    },
+  });
+}

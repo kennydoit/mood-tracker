@@ -14,6 +14,7 @@ import { loadEntriesSorted } from '../storage/moodStorage';
 import { POSITIVE_METRICS, NEGATIVE_METRICS } from '../constants/moods';
 import { MoodEntry, MoodMetric } from '../types';
 import { calculateWellnessScore, wellnessColor } from '../utils/wellness';
+import { useTheme, ThemeColors } from '../theme';
 
 const WELLNESS_KEY = 'wellness';
 const ALL_METRICS = [...POSITIVE_METRICS, ...NEGATIVE_METRICS];
@@ -26,6 +27,8 @@ function MetricChart({
   metric: MoodMetric | { key: string; label: string; color: string };
   entries: MoodEntry[];
 }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const isWellness = metric.key === WELLNESS_KEY;
 
   const relevant = entries
@@ -70,13 +73,13 @@ function MetricChart({
       fromZero
       segments={isWellness ? 10 : 5}
       chartConfig={{
-        backgroundGradientFrom: '#fff',
-        backgroundGradientTo: '#fff',
+        backgroundGradientFrom: colors.card,
+        backgroundGradientTo: colors.card,
         decimalPlaces: 0,
         color: () => metric.color,
-        labelColor: () => '#aaa',
+        labelColor: () => colors.textMuted,
         propsForDots: { r: '4', strokeWidth: '2', stroke: metric.color },
-        propsForBackgroundLines: { stroke: '#f0f0f0' },
+        propsForBackgroundLines: { stroke: colors.borderLight },
       }}
       bezier
       style={styles.chartStyle}
@@ -85,6 +88,8 @@ function MetricChart({
 }
 
 export default function TrendsScreen() {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const [entries, setEntries] = useState<MoodEntry[]>([]);
   const [selectedKey, setSelectedKey] = useState<string>(WELLNESS_KEY);
 
@@ -208,132 +213,134 @@ export default function TrendsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: '#fafafa' },
-  content: { padding: 16, paddingBottom: 40 },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#aaa',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 6,
-    marginTop: 8,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 4,
-  },
-  metricChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
-  },
-  metricChipText: {
-    fontSize: 13,
-    color: '#555',
-    fontWeight: '500',
-  },
-  metricChipTextActive: {
-    color: '#fff',
-    fontWeight: '700',
-  },
-  chartCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    marginTop: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  chartTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginBottom: 10,
-  },
-  chartStyle: {
-    borderRadius: 8,
-    marginLeft: -8,
-  },
-  chartPlaceholder: {
-    height: 100,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  placeholderText: {
-    fontSize: 13,
-    color: '#bbb',
-    fontStyle: 'italic',
-  },
-  statsCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    marginTop: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  statsTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#111',
-    marginBottom: 12,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#333',
-  },
-  statLabel: {
-    fontSize: 11,
-    color: '#aaa',
-    marginTop: 2,
-  },
-  wellnessChip: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: '#00BCD4',
-    padding: 14,
-    marginBottom: 14,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  wellnessChipActive: {
-    backgroundColor: '#00BCD4',
-  },
-  wellnessChipText: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#00BCD4',
-  },
-  wellnessChipTextActive: {
-    color: '#fff',
-  },
-  wellnessChipSub: {
-    fontSize: 11,
-    color: '#aaa',
-    marginTop: 1,
-  },
-});
+function makeStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    scroll: { flex: 1, backgroundColor: c.bg },
+    content: { padding: 16, paddingBottom: 40 },
+    sectionLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: c.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginBottom: 6,
+      marginTop: 8,
+    },
+    chipRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+      marginBottom: 4,
+    },
+    metricChip: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+      borderWidth: 1.5,
+      borderColor: c.border,
+      backgroundColor: c.card,
+    },
+    metricChipText: {
+      fontSize: 13,
+      color: c.textSecondary,
+      fontWeight: '500',
+    },
+    metricChipTextActive: {
+      color: '#fff',
+      fontWeight: '700',
+    },
+    chartCard: {
+      backgroundColor: c.card,
+      borderRadius: 12,
+      padding: 14,
+      marginTop: 16,
+      shadowColor: c.shadow,
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 2,
+    },
+    chartTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      marginBottom: 10,
+    },
+    chartStyle: {
+      borderRadius: 8,
+      marginLeft: -8,
+    },
+    chartPlaceholder: {
+      height: 100,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    placeholderText: {
+      fontSize: 13,
+      color: c.textHint,
+      fontStyle: 'italic',
+    },
+    statsCard: {
+      backgroundColor: c.card,
+      borderRadius: 12,
+      padding: 14,
+      marginTop: 12,
+      shadowColor: c.shadow,
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 2,
+    },
+    statsTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: c.textPrimary,
+      marginBottom: 12,
+    },
+    statsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+    },
+    statItem: {
+      alignItems: 'center',
+    },
+    statValue: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: c.textSecondary,
+    },
+    statLabel: {
+      fontSize: 11,
+      color: c.textMuted,
+      marginTop: 2,
+    },
+    wellnessChip: {
+      backgroundColor: c.card,
+      borderRadius: 14,
+      borderWidth: 2,
+      borderColor: '#00BCD4',
+      padding: 14,
+      marginBottom: 14,
+      shadowColor: c.shadow,
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 2,
+    },
+    wellnessChipActive: {
+      backgroundColor: '#00BCD4',
+    },
+    wellnessChipText: {
+      fontSize: 16,
+      fontWeight: '800',
+      color: '#00BCD4',
+    },
+    wellnessChipTextActive: {
+      color: '#fff',
+    },
+    wellnessChipSub: {
+      fontSize: 11,
+      color: c.textMuted,
+      marginTop: 1,
+    },
+  });
+}

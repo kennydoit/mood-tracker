@@ -19,6 +19,7 @@ import {
 } from '../notifications/reminderService';
 import { AVAILABLE_HABITS } from '../constants/moods';
 import { loadTrackedHabits, saveTrackedHabits } from '../storage/habitSettings';
+import { useTheme, ThemeColors, ThemeMode } from '../theme';
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const MINUTES = [0, 15, 30, 45];
@@ -34,6 +35,8 @@ function formatTime(hour: number, minute: number) {
 }
 
 export default function SettingsScreen() {
+  const { colors, mode, setMode } = useTheme();
+  const styles = makeStyles(colors);
   const [settings, setSettings] = useState<ReminderSettings>({
     enabled: false,
     hour: 20,
@@ -165,6 +168,25 @@ export default function SettingsScreen() {
         </View>
       )}
 
+      {/* Appearance */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Appearance</Text>
+        {(['light', 'dark'] as ThemeMode[]).map((m) => (
+          <TouchableOpacity
+            key={m}
+            style={styles.habitRow}
+            onPress={() => setMode(m)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.habitEmoji}>{m === 'light' ? '☀️' : '🌙'}</Text>
+            <Text style={styles.habitLabel}>{m === 'light' ? 'Light' : 'Dark'}</Text>
+            <View style={[styles.checkbox, mode === m && styles.checkboxActive]}>
+              {mode === m && <Text style={styles.checkmark}>✓</Text>}
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
+
       {/* Habits to Track */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Habits to Track</Text>
@@ -203,125 +225,127 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: '#fafafa' },
-  content: { padding: 16, paddingBottom: 40 },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rowTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111',
-  },
-  rowSub: {
-    fontSize: 12,
-    color: '#aaa',
-    marginTop: 2,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111',
-    marginBottom: 10,
-  },
-  timeDisplay: {
-    fontSize: 32,
-    fontWeight: '300',
-    color: '#5B7FFF',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  pickerLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#aaa',
-    textTransform: 'uppercase',
-    marginBottom: 6,
-  },
-  pickerRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  pickerChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#f5f5f5',
-  },
-  pickerChipActive: {
-    backgroundColor: '#5B7FFF',
-    borderColor: '#5B7FFF',
-  },
-  pickerChipText: {
-    fontSize: 13,
-    color: '#555',
-    fontWeight: '500',
-  },
-  pickerChipTextActive: {
-    color: '#fff',
-    fontWeight: '700',
-  },
-  aboutText: {
-    fontSize: 15,
-    color: '#333',
-    fontWeight: '600',
-  },
-  aboutSub: {
-    fontSize: 13,
-    color: '#aaa',
-    marginTop: 4,
-    lineHeight: 18,
-  },
-  habitRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f5f5f5',
-  },
-  habitEmoji: {
-    fontSize: 20,
-    width: 32,
-  },
-  habitLabel: {
-    flex: 1,
-    fontSize: 15,
-    color: '#333',
-    fontWeight: '500',
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#ddd',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  checkboxActive: {
-    backgroundColor: '#5B7FFF',
-    borderColor: '#5B7FFF',
-  },
-  checkmark: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-});
+function makeStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    scroll: { flex: 1, backgroundColor: c.bg },
+    content: { padding: 16, paddingBottom: 40 },
+    card: {
+      backgroundColor: c.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      shadowColor: c.shadow,
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 2,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    rowTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: c.textPrimary,
+    },
+    rowSub: {
+      fontSize: 12,
+      color: c.textMuted,
+      marginTop: 2,
+    },
+    cardTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: c.textPrimary,
+      marginBottom: 10,
+    },
+    timeDisplay: {
+      fontSize: 32,
+      fontWeight: '300',
+      color: c.accent,
+      textAlign: 'center',
+      marginBottom: 16,
+    },
+    pickerLabel: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: c.textMuted,
+      textTransform: 'uppercase',
+      marginBottom: 6,
+    },
+    pickerRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 6,
+    },
+    pickerChip: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.cardAlt,
+    },
+    pickerChipActive: {
+      backgroundColor: c.accent,
+      borderColor: c.accent,
+    },
+    pickerChipText: {
+      fontSize: 13,
+      color: c.textSecondary,
+      fontWeight: '500',
+    },
+    pickerChipTextActive: {
+      color: '#fff',
+      fontWeight: '700',
+    },
+    aboutText: {
+      fontSize: 15,
+      color: c.textSecondary,
+      fontWeight: '600',
+    },
+    aboutSub: {
+      fontSize: 13,
+      color: c.textMuted,
+      marginTop: 4,
+      lineHeight: 18,
+    },
+    habitRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: c.cardAlt,
+    },
+    habitEmoji: {
+      fontSize: 20,
+      width: 32,
+    },
+    habitLabel: {
+      flex: 1,
+      fontSize: 15,
+      color: c.textSecondary,
+      fontWeight: '500',
+    },
+    checkbox: {
+      width: 24,
+      height: 24,
+      borderRadius: 6,
+      borderWidth: 2,
+      borderColor: c.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.cardAlt,
+    },
+    checkboxActive: {
+      backgroundColor: c.accent,
+      borderColor: c.accent,
+    },
+    checkmark: {
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: '700',
+    },
+  });
+}

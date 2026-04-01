@@ -7,6 +7,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { toDateKey } from '../utils/dateUtils';
+import { useTheme, ThemeColors } from '../theme';
 
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const ITEM_WIDTH = 44;
@@ -50,6 +51,8 @@ export default function WeekStrip({
   entryDateKeys,
   onSelectDate,
 }: Props) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const days = buildDays();
   const listRef = useRef<FlatList>(null);
 
@@ -130,83 +133,85 @@ export default function WeekStrip({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#fff',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  list: {
-    paddingHorizontal: 8,
-  },
-  dayWrapper: {
-    alignItems: 'center',
-    marginHorizontal: ITEM_MARGIN,
-    width: ITEM_WIDTH,
-  },
-  circle: {
-    width: ITEM_WIDTH,
-    height: ITEM_WIDTH,
-    borderRadius: ITEM_WIDTH / 2,
-    backgroundColor: '#f5f5f5',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  circleToday: {
-    borderColor: '#5B7FFF',
-    backgroundColor: '#EEF1FF',
-  },
-  circleSelected: {
-    backgroundColor: '#5B7FFF',
-    borderColor: '#5B7FFF',
-  },
-  dayNumber: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#444',
-  },
-  dayNumberToday: {
-    color: '#5B7FFF',
-    fontWeight: '700',
-  },
-  dayNumberSelected: {
-    color: '#fff',
-    fontWeight: '800',
-  },
-  dayLetter: {
-    fontSize: 11,
-    color: '#bbb',
-    marginTop: 4,
-    fontWeight: '500',
-  },
-  dayLetterToday: {
-    color: '#5B7FFF',
-    fontWeight: '700',
-  },
-  dayLetterSelected: {
-    color: '#5B7FFF',
-    fontWeight: '700',
-  },
-  dotRow: {
-    height: 6,
-    marginTop: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: '#5B7FFF',
-  },
-  dotSelected: {
-    backgroundColor: '#5B7FFF',
-  },
-  dotPlaceholder: {
-    width: 5,
-    height: 5,
-  },
-});
+function makeStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      backgroundColor: c.card,
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: c.borderLight,
+    },
+    list: {
+      paddingHorizontal: 8,
+    },
+    dayWrapper: {
+      alignItems: 'center',
+      marginHorizontal: ITEM_MARGIN,
+      width: ITEM_WIDTH,
+    },
+    circle: {
+      width: ITEM_WIDTH,
+      height: ITEM_WIDTH,
+      borderRadius: ITEM_WIDTH / 2,
+      backgroundColor: c.cardAlt,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1.5,
+      borderColor: 'transparent',
+    },
+    circleToday: {
+      borderColor: c.accent,
+      backgroundColor: c.accentBg,
+    },
+    circleSelected: {
+      backgroundColor: c.accent,
+      borderColor: c.accent,
+    },
+    dayNumber: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: c.textSecondary,
+    },
+    dayNumberToday: {
+      color: c.accent,
+      fontWeight: '700',
+    },
+    dayNumberSelected: {
+      color: '#fff',
+      fontWeight: '800',
+    },
+    dayLetter: {
+      fontSize: 11,
+      color: c.textHint,
+      marginTop: 4,
+      fontWeight: '500',
+    },
+    dayLetterToday: {
+      color: c.accent,
+      fontWeight: '700',
+    },
+    dayLetterSelected: {
+      color: c.accent,
+      fontWeight: '700',
+    },
+    dotRow: {
+      height: 6,
+      marginTop: 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    dot: {
+      width: 5,
+      height: 5,
+      borderRadius: 2.5,
+      backgroundColor: c.accent,
+    },
+    dotSelected: {
+      backgroundColor: c.accent,
+    },
+    dotPlaceholder: {
+      width: 5,
+      height: 5,
+    },
+  });
+}

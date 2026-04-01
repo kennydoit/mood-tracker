@@ -1,7 +1,8 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text } from 'react-native';
+import { useTheme } from '../theme';
 
 import LogScreen from '../screens/LogScreen';
 import HistoryScreen from '../screens/HistoryScreen';
@@ -25,8 +26,13 @@ const icons: Record<string, string> = {
 };
 
 export default function AppNavigator() {
+  const { mode, colors } = useTheme();
+  const navTheme = mode === 'dark'
+    ? { ...DarkTheme, colors: { ...DarkTheme.colors, background: colors.bg, card: colors.card, border: colors.borderLight } }
+    : { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: colors.bg, card: colors.card, border: colors.borderLight } };
+
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navTheme}>
       <Tab.Navigator
         screenOptions={({ route }) => ({
           tabBarIcon: ({ focused }) => (
@@ -34,11 +40,11 @@ export default function AppNavigator() {
               {icons[route.name]}
             </Text>
           ),
-          tabBarActiveTintColor: '#5B7FFF',
-          tabBarInactiveTintColor: '#999',
+          tabBarActiveTintColor: colors.accent,
+          tabBarInactiveTintColor: colors.textMuted,
           tabBarStyle: {
-            backgroundColor: '#fff',
-            borderTopColor: '#f0f0f0',
+            backgroundColor: colors.card,
+            borderTopColor: colors.borderLight,
             paddingBottom: 4,
             height: 60,
           },
@@ -47,16 +53,16 @@ export default function AppNavigator() {
             fontWeight: '600',
           },
           headerStyle: {
-            backgroundColor: '#fff',
+            backgroundColor: colors.card,
             shadowColor: 'transparent',
             elevation: 0,
             borderBottomWidth: 1,
-            borderBottomColor: '#f0f0f0',
+            borderBottomColor: colors.borderLight,
           },
           headerTitleStyle: {
             fontWeight: '700',
             fontSize: 18,
-            color: '#111',
+            color: colors.textPrimary,
           },
         })}
       >

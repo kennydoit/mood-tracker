@@ -14,6 +14,7 @@ import { MoodEntry } from '../types';
 import { loadEntriesSorted, deleteEntry } from '../storage/moodStorage';
 import { POSITIVE_METRICS, NEGATIVE_METRICS, AVAILABLE_HABITS } from '../constants/moods';
 import { calculateWellnessScore, calculateHabitScore, wellnessColor, wellnessLabel } from '../utils/wellness';
+import { useTheme, ThemeColors } from '../theme';
 
 const ALL_METRICS = [...POSITIVE_METRICS, ...NEGATIVE_METRICS];
 
@@ -24,6 +25,8 @@ function EntryCard({
   entry: MoodEntry;
   onDelete: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const [expanded, setExpanded] = useState(false);
   const date = new Date(entry.date);
   const score = calculateWellnessScore(entry.values, entry.habits);
@@ -119,6 +122,8 @@ function EntryCard({
 }
 
 export default function HistoryScreen() {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const [entries, setEntries] = useState<MoodEntry[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -174,162 +179,164 @@ export default function HistoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  list: {
-    padding: 16,
-    paddingBottom: 32,
-    backgroundColor: '#fafafa',
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  wellnessBadge: {
-    alignItems: 'flex-end',
-    marginRight: 4,
-  },
-  wellnessBadgeScore: {
-    fontSize: 22,
-    fontWeight: '900',
-    lineHeight: 24,
-  },
-  wellnessBadgeLabel: {
-    fontSize: 9,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 10,
-  },
-  cardDate: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#111',
-  },
-  cardTime: {
-    fontSize: 12,
-    color: '#aaa',
-    marginTop: 1,
-  },
-  deleteIcon: {
-    fontSize: 14,
-    color: '#bbb',
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  chip: {
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  chipLabel: {
-    fontSize: 9,
-    color: '#aaa',
-    textTransform: 'uppercase',
-  },
-  chipValue: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#f0f0f0',
-    marginVertical: 10,
-  },
-  groupLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#888',
-    marginBottom: 6,
-  },
-  notesLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#888',
-    marginBottom: 4,
-  },
-  notesText: {
-    fontSize: 13,
-    color: '#555',
-    lineHeight: 18,
-  },
-  habitsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  habitScore: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#5B7FFF',
-  },
-  habitChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  habitChipOn: {
-    backgroundColor: '#EEF2FF',
-    borderRadius: 16,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: '#5B7FFF',
-  },
-  habitChipText: {
-    fontSize: 12,
-    color: '#5B7FFF',
-    fontWeight: '600',
-  },
-  habitChipOff: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 16,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  habitChipTextOff: {
-    fontSize: 12,
-    color: '#bbb',
-    fontWeight: '500',
-  },
-  empty: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fafafa',
-    padding: 32,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 12,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#333',
-  },
-  emptySubText: {
-    fontSize: 14,
-    color: '#aaa',
-    marginTop: 6,
-  },
-});
+function makeStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    list: {
+      padding: 16,
+      paddingBottom: 32,
+      backgroundColor: c.bg,
+    },
+    card: {
+      backgroundColor: c.card,
+      borderRadius: 12,
+      padding: 14,
+      marginBottom: 12,
+      shadowColor: c.shadow,
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 2,
+    },
+    wellnessBadge: {
+      alignItems: 'flex-end',
+      marginRight: 4,
+    },
+    wellnessBadgeScore: {
+      fontSize: 22,
+      fontWeight: '900',
+      lineHeight: 24,
+    },
+    wellnessBadgeLabel: {
+      fontSize: 9,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 0.3,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: 10,
+    },
+    cardDate: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: c.textPrimary,
+    },
+    cardTime: {
+      fontSize: 12,
+      color: c.textMuted,
+      marginTop: 1,
+    },
+    deleteIcon: {
+      fontSize: 14,
+      color: c.textHint,
+    },
+    summaryRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 6,
+    },
+    chip: {
+      alignItems: 'center',
+      backgroundColor: c.cardAlt,
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+    },
+    chipLabel: {
+      fontSize: 9,
+      color: c.textMuted,
+      textTransform: 'uppercase',
+    },
+    chipValue: {
+      fontSize: 14,
+      fontWeight: '700',
+    },
+    divider: {
+      height: 1,
+      backgroundColor: c.borderLight,
+      marginVertical: 10,
+    },
+    groupLabel: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: c.textHint,
+      marginBottom: 6,
+    },
+    notesLabel: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: c.textHint,
+      marginBottom: 4,
+    },
+    notesText: {
+      fontSize: 13,
+      color: c.textSecondary,
+      lineHeight: 18,
+    },
+    habitsHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 6,
+    },
+    habitScore: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: c.accent,
+    },
+    habitChips: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 6,
+    },
+    habitChipOn: {
+      backgroundColor: c.accentBg,
+      borderRadius: 16,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderWidth: 1,
+      borderColor: c.accent,
+    },
+    habitChipText: {
+      fontSize: 12,
+      color: c.accent,
+      fontWeight: '600',
+    },
+    habitChipOff: {
+      backgroundColor: c.cardAlt,
+      borderRadius: 16,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    habitChipTextOff: {
+      fontSize: 12,
+      color: c.textHint,
+      fontWeight: '500',
+    },
+    empty: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.bg,
+      padding: 32,
+    },
+    emptyIcon: {
+      fontSize: 48,
+      marginBottom: 12,
+    },
+    emptyText: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: c.textPrimary,
+    },
+    emptySubText: {
+      fontSize: 14,
+      color: c.textMuted,
+      marginTop: 6,
+    },
+  });
+}
