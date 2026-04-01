@@ -9,6 +9,7 @@ export interface ThemeColors {
   cardAlt: string;
   border: string;
   borderLight: string;
+  divider: string;
   textPrimary: string;
   textSecondary: string;
   textMuted: string;
@@ -25,6 +26,7 @@ export const lightColors: ThemeColors = {
   cardAlt: '#f5f5f5',
   border: '#e0e0e0',
   borderLight: '#f0f0f0',
+  divider: '#e8e8e8',
   textPrimary: '#111',
   textSecondary: '#555',
   textMuted: '#666',
@@ -41,6 +43,7 @@ export const darkColors: ThemeColors = {
   cardAlt: '#2C2C2E',
   border: '#3A3A3C',
   borderLight: '#2C2C2E',
+  divider: '#353537',
   textPrimary: '#F2F2F7',
   textSecondary: '#AEAEB2',
   textMuted: '#fff',

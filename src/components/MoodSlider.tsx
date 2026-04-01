@@ -26,22 +26,24 @@ export default function MoodSlider({ label, value, color, onChange, startLabel =
         {value !== undefined && <Text style={[styles.valueText, { color }]}>{value}</Text>}
       </View>
       <View style={styles.buttonRow}>
-        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
+        {Array.from({ length: 10 }, (_, i) => i + 1).map((n, index) => {
           const selected = n === value;
           return (
-            <TouchableOpacity
-              key={n}
-              onPress={() => onChange(selected ? undefined : n)}
-              style={[
-                styles.numButton,
-                selected && { backgroundColor: color, borderColor: color },
-              ]}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.numText, selected && styles.numTextSelected]}>
-                {n}
-              </Text>
-            </TouchableOpacity>
+            <View key={n} style={styles.buttonWrapper}>
+              <TouchableOpacity
+                onPress={() => onChange(selected ? undefined : n)}
+                style={[
+                  styles.numButton,
+                  selected && { backgroundColor: color, borderColor: color },
+                ]}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.numText, selected && styles.numTextSelected]}>
+                  {n}
+                </Text>
+              </TouchableOpacity>
+              {index < 9 && <View style={styles.divider} />}
+            </View>
           );
         })}
       </View>
@@ -76,6 +78,11 @@ function makeStyles(c: ThemeColors) {
     buttonRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    buttonWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
     },
     numButton: {
       width: 28,
@@ -86,6 +93,12 @@ function makeStyles(c: ThemeColors) {
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: c.cardAlt,
+    },
+    divider: {
+      height: 10,
+      width: 1,
+      backgroundColor: c.divider,
+      marginHorizontal: 4,
     },
     numText: {
       fontSize: 12,
