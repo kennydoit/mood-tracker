@@ -21,6 +21,7 @@ import {
   saveEntryForDate,
 } from '../storage/moodStorage';
 import { loadTrackedHabits } from '../storage/habitSettings';
+import { loadTrackedMoodStates } from '../storage/moodStateSettings';
 import { toDateKey } from '../utils/dateUtils';
 import { calculateWellnessScore, calculateHabitScore, wellnessColor, wellnessLabel } from '../utils/wellness';
 import { useTheme, ThemeColors } from '../theme';
@@ -48,17 +49,18 @@ export default function LogScreen() {
   const [notes, setNotes] = useState('');
   const [habits, setHabits] = useState<Record<string, boolean>>({});
   const [trackedHabits, setTrackedHabits] = useState<string[]>([]);
+  const [trackedMoodStates, setTrackedMoodStates] = useState<string[]>([]);
   const [existingEntryId, setExistingEntryId] = useState<string | null>(null);
-  const [showNegative, setShowNegative] = useState(false);
   const [saving, setSaving] = useState(false);
   const [enteredMetrics, setEnteredMetrics] = useState<string[]>([]);
   const [habitsEntered, setHabitsEntered] = useState(false);
 
-  // Reload the dot-map and tracked habits whenever the screen comes into focus
+  // Reload the dot-map, tracked habits, and mood states whenever the screen comes into focus
   useFocusEffect(
     useCallback(() => {
       loadDateKeyMap().then((map) => setEntryDateKeys(new Set(Object.keys(map))));
       loadTrackedHabits().then(setTrackedHabits);
+      loadTrackedMoodStates().then(setTrackedMoodStates);
     }, []),
   );
 
@@ -180,49 +182,24 @@ export default function LogScreen() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Positive section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Positive States</Text>
-          <Text style={styles.sectionSub}>1 = Not at all · 10 = Extremely</Text>
-          {POSITIVE_METRICS.map((metric) => (
-            <MoodSlider
-              key={metric.key}
-              label={metric.label}
-              value={values[metric.key]}
-              color={metric.color}
-              onChange={(v) => setValue(metric.key, v)}
-              startLabel={METRIC_LABELS[metric.key]?.start}
-              endLabel={METRIC_LABELS[metric.key]?.end}
-            />
-          ))}
-        </View>
-
-        {/* Negative section toggle */}
-        <TouchableOpacity
-          style={styles.toggleButton}
-          onPress={() => setShowNegative((v) => !v)}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.toggleText}>
-            {showNegative ? '▲ Hide Negative States' : '▼ Track Negative States'}
-          </Text>
-        </TouchableOpacity>
-
-        {showNegative && (
+        {/* Mood States */}
+        {trackedMoodStates.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Negative States</Text>
+            <Text style={styles.sectionTitle}>Mood States</Text>
             <Text style={styles.sectionSub}>1 = Not at all · 10 = Extremely</Text>
-            {NEGATIVE_METRICS.map((metric) => (
-              <MoodSlider
-                key={metric.key}
-                label={metric.label}
-                value={values[metric.key]}
-                color={metric.color}
-                onChange={(v) => setValue(metric.key, v)}
-                startLabel={METRIC_LABELS[metric.key]?.start}
-                endLabel={METRIC_LABELS[metric.key]?.end}
-              />
-            ))}
+            {[...POSITIVE_METRICS, ...NEGATIVE_METRICS]
+              .filter((metric) => trackedMoodStates.includes(metric.key))
+              .map((metric) => (
+                <MoodSlider
+                  key={metric.key}
+                  label={metric.label}
+                  value={values[metric.key]}
+                  color={metric.color}
+                  onChange={(v) => setValue(metric.key, v)}
+                  startLabel={METRIC_LABELS[metric.key]?.start}
+                  endLabel={METRIC_LABELS[metric.key]?.end}
+                />
+              ))}
           </View>
         )}
 
@@ -396,16 +373,6 @@ function makeStyles(c: ThemeColors) {
       fontSize: 12,
       color: c.textMuted,
       marginBottom: 12,
-    },
-    toggleButton: {
-      alignItems: 'center',
-      paddingVertical: 10,
-      marginBottom: 12,
-    },
-    toggleText: {
-      fontSize: 15,
-      color: c.accent,
-      fontWeight: '600',
     },
     notesInput: {
       borderWidth: 1,
