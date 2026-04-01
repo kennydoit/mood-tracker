@@ -119,12 +119,8 @@ export default function LogScreen() {
         onSelectDate={handleSelectDate}
       />
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Date heading */}
+      {/* Date heading — fixed below week strip */}
+      <View style={styles.fixedHeader}>
         <View style={styles.dateHeading}>
           <Text style={styles.dateHeadingText}>
             {isToday ? 'Today' : format(selectedDate, 'EEEE, MMM d')}
@@ -136,7 +132,7 @@ export default function LogScreen() {
           )}
         </View>
 
-        {/* Wellness Score banner */}
+        {/* Wellness Score banner — pinned under date */}
         <View style={[styles.wellnessBanner, { borderColor: scoreColor }]}>
           <View style={styles.wellnessLeft}>
             <Text style={styles.wellnessTitle}>Wellness Score</Text>
@@ -147,7 +143,13 @@ export default function LogScreen() {
             <Text style={[styles.wellnessLabel, { color: scoreColor }]}>{scoreLabel}</Text>
           </View>
         </View>
+      </View>
 
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Positive section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Positive States</Text>
@@ -256,6 +258,12 @@ export default function LogScreen() {
 }
 
 const styles = StyleSheet.create({
+  fixedHeader: {
+    backgroundColor: '#fafafa',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
+  },
   scroll: {
     flex: 1,
     backgroundColor: '#fafafa',
