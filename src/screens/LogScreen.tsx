@@ -380,12 +380,12 @@ function makeStyles(c: ThemeColors) {
     },
     metricDivider: {
       height: 1,
-      backgroundColor: '#FF69B4',
+      backgroundColor: c.divider,
       marginVertical: 12,
     },
     habitDivider: {
       height: 1,
-      backgroundColor: '#FF69B4',
+      backgroundColor: c.divider,
       marginVertical: 8,
     },
     notesInput: {
@@ -419,8 +419,6 @@ function makeStyles(c: ThemeColors) {
       flexDirection: 'row',
       alignItems: 'center',
       paddingVertical: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: c.borderLight,
     },
     habitCheckbox: {
       width: 24,

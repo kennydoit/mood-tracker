@@ -462,7 +462,7 @@ function makeStyles(c: ThemeColors) {
     },
     moodDivider: {
       height: 1,
-      backgroundColor: '#FF69B4',
+      backgroundColor: c.divider,
       marginVertical: 8,
     },
   });
