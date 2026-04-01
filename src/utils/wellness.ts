@@ -1,17 +1,20 @@
 import { POSITIVE_METRICS, NEGATIVE_METRICS } from '../constants/moods';
 
 /**
- * Calculates a Wellness Score (0–100) from a set of metric values.
+ * Calculates a Wellness Score (0–100) from mood metric values and optional habits.
  *
  * Formula:
  *  - Positive metrics: normalised contribution = (value - 1) / 9  → 0..1
  *  - Negative metrics: normalised contribution = (10 - value) / 9 → 0..1 (inverted)
- *  - Average all normalised contributions, multiply by 100.
+ *  - Each tracked habit: contribution = 1 if checked, 0 if unchecked → 0..1
+ *  - All components averaged equally, multiplied by 100.
  *
- * All metrics are equally weighted for now.
+ * Habits blend in proportionally — if you track 5 habits they contribute
+ * 5 slots out of (10 metrics + 5 habits) = 15 total.
  */
 export function calculateWellnessScore(
   values: Record<string, number>,
+  habits?: Record<string, boolean>,
 ): number {
   let total = 0;
   let count = 0;
@@ -28,6 +31,13 @@ export function calculateWellnessScore(
     const v = values[m.key];
     if (v !== undefined) {
       total += (10 - v) / 9;
+      count++;
+    }
+  }
+
+  if (habits) {
+    for (const key of Object.keys(habits)) {
+      total += habits[key] ? 1 : 0;
       count++;
     }
   }

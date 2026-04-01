@@ -96,7 +96,11 @@ export default function LogScreen() {
     }
   };
 
-  const score = calculateWellnessScore(values);
+  // Only pass the habits that are actually tracked
+  const trackedHabitsRecord = trackedHabits.length > 0
+    ? Object.fromEntries(trackedHabits.map((k) => [k, habits[k] ?? false]))
+    : undefined;
+  const score = calculateWellnessScore(values, trackedHabitsRecord);
   const scoreColor = wellnessColor(score);
   const scoreLabel = wellnessLabel(score);
   const habitScore = calculateHabitScore(habits, trackedHabits);

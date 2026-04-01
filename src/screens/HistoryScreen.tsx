@@ -26,7 +26,7 @@ function EntryCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const date = new Date(entry.date);
-  const score = calculateWellnessScore(entry.values);
+  const score = calculateWellnessScore(entry.values, entry.habits);
   const scoreColor = wellnessColor(score);
   const scoreLabel = wellnessLabel(score);
 

@@ -46,7 +46,7 @@ function MetricChart({
   }
 
   const chartData = isWellness
-    ? relevant.map((e) => calculateWellnessScore(e.values))
+    ? relevant.map((e) => calculateWellnessScore(e.values, e.habits))
     : relevant.map((e) => e.values[metric.key]);
 
   const data = {
@@ -175,7 +175,7 @@ export default function TrendsScreen() {
           <Text style={styles.statsTitle}>Stats for {selectedMetric.label}</Text>
           {(() => {
             const vals = isWellness
-              ? entries.map((e) => calculateWellnessScore(e.values))
+              ? entries.map((e) => calculateWellnessScore(e.values, e.habits))
               : entries.map((e) => e.values[selectedKey]).filter((v) => v !== undefined);
             if (vals.length === 0) return null;
             const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
