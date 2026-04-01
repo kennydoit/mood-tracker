@@ -29,7 +29,7 @@ export default function MoodSlider({ label, value, color, onChange, startLabel =
         {Array.from({ length: 10 }, (_, i) => i + 1).map((n, index) => {
           const selected = n === value;
           return (
-            <View key={n} style={styles.buttonWrapper}>
+            <React.Fragment key={n}>
               <TouchableOpacity
                 onPress={() => onChange(selected ? undefined : n)}
                 style={[
@@ -43,7 +43,7 @@ export default function MoodSlider({ label, value, color, onChange, startLabel =
                 </Text>
               </TouchableOpacity>
               {index < 9 && <View style={styles.divider} />}
-            </View>
+            </React.Fragment>
           );
         })}
       </View>
@@ -79,10 +79,7 @@ function makeStyles(c: ThemeColors) {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-    },
-    buttonWrapper: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flex: 1,
     },
     numButton: {
       width: 28,
@@ -95,10 +92,9 @@ function makeStyles(c: ThemeColors) {
       backgroundColor: c.cardAlt,
     },
     divider: {
-      height: 10,
+      height: 14,
       width: 1,
       backgroundColor: c.divider,
-      marginHorizontal: 4,
     },
     numText: {
       fontSize: 12,
