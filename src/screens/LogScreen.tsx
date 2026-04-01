@@ -212,7 +212,7 @@ export default function LogScreen() {
                 <Text style={styles.habitScoreText}>{habitScore}%</Text>
               </View>
             </View>
-            <Text style={styles.sectionSub}>Check off what you did today</Text>
+            <Text style={styles.sectionSub}>Build habits to improve well being</Text>
             {AVAILABLE_HABITS.filter((h) => trackedHabits.includes(h.key)).map((habit) => {
               const checked = habits[habit.key] === true;
               return (
