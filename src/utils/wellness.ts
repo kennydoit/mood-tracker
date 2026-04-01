@@ -36,6 +36,18 @@ export function calculateWellnessScore(
   return Math.round((total / count) * 100);
 }
 
+/**
+ * Calculates a Habit Score (0–100) = percentage of tracked habits checked off.
+ */
+export function calculateHabitScore(
+  habits: Record<string, boolean>,
+  trackedKeys: string[],
+): number {
+  if (trackedKeys.length === 0) return 0;
+  const checked = trackedKeys.filter((k) => habits[k] === true).length;
+  return Math.round((checked / trackedKeys.length) * 100);
+}
+
 /** Returns a colour that reflects the score level */
 export function wellnessColor(score: number): string {
   if (score >= 75) return '#4CAF50'; // green

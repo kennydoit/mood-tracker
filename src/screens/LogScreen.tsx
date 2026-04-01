@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
-import { POSITIVE_METRICS, NEGATIVE_METRICS } from '../constants/moods';
+import { POSITIVE_METRICS, NEGATIVE_METRICS, AVAILABLE_HABITS } from '../constants/moods';
 import MoodSlider from '../components/MoodSlider';
 import WeekStrip from '../components/WeekStrip';
 import {
@@ -20,8 +20,9 @@ import {
   loadDateKeyMap,
   saveEntryForDate,
 } from '../storage/moodStorage';
+import { loadTrackedHabits } from '../storage/habitSettings';
 import { toDateKey } from '../utils/dateUtils';
-import { calculateWellnessScore, wellnessColor, wellnessLabel } from '../utils/wellness';
+import { calculateWellnessScore, calculateHabitScore, wellnessColor, wellnessLabel } from '../utils/wellness';
 
 const defaultValues = (): Record<string, number> => {
   const vals: Record<string, number> = {};
@@ -42,14 +43,17 @@ export default function LogScreen() {
   const [entryDateKeys, setEntryDateKeys] = useState<Set<string>>(new Set());
   const [values, setValues] = useState<Record<string, number>>(defaultValues());
   const [notes, setNotes] = useState('');
+  const [habits, setHabits] = useState<Record<string, boolean>>({});
+  const [trackedHabits, setTrackedHabits] = useState<string[]>([]);
   const [existingEntryId, setExistingEntryId] = useState<string | null>(null);
   const [showNegative, setShowNegative] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Reload the dot-map whenever the screen comes into focus
+  // Reload the dot-map and tracked habits whenever the screen comes into focus
   useFocusEffect(
     useCallback(() => {
       loadDateKeyMap().then((map) => setEntryDateKeys(new Set(Object.keys(map))));
+      loadTrackedHabits().then(setTrackedHabits);
     }, []),
   );
 
@@ -60,10 +64,12 @@ export default function LogScreen() {
         setValues(entry.values);
         setNotes(entry.notes ?? '');
         setExistingEntryId(entry.id);
+        setHabits(entry.habits ?? {});
       } else {
         setValues(defaultValues());
         setNotes('');
         setExistingEntryId(null);
+        setHabits({});
       }
     });
   }, [selectedDate]);
@@ -78,7 +84,7 @@ export default function LogScreen() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await saveEntryForDate(selectedDate, values, notes.trim() || undefined);
+      await saveEntryForDate(selectedDate, values, notes.trim() || undefined, habits);
       // Refresh dot map
       const map = await loadDateKeyMap();
       setEntryDateKeys(new Set(Object.keys(map)));
@@ -93,6 +99,7 @@ export default function LogScreen() {
   const score = calculateWellnessScore(values);
   const scoreColor = wellnessColor(score);
   const scoreLabel = wellnessLabel(score);
+  const habitScore = calculateHabitScore(habits, trackedHabits);
   const isToday = toDateKey(selectedDate) === toDateKey(new Date());
   const isEditing = !!existingEntryId;
 
@@ -176,6 +183,40 @@ export default function LogScreen() {
                 onChange={(v) => setValue(metric.key, v)}
               />
             ))}
+          </View>
+        )}
+
+        {/* Habits */}
+        {trackedHabits.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.habitHeader}>
+              <Text style={styles.sectionTitle}>Habits</Text>
+              <View style={styles.habitScoreBadge}>
+                <Text style={styles.habitScoreText}>{habitScore}%</Text>
+              </View>
+            </View>
+            <Text style={styles.sectionSub}>Check off what you did today</Text>
+            {AVAILABLE_HABITS.filter((h) => trackedHabits.includes(h.key)).map((habit) => {
+              const checked = habits[habit.key] === true;
+              return (
+                <TouchableOpacity
+                  key={habit.key}
+                  style={styles.habitRow}
+                  onPress={() =>
+                    setHabits((prev) => ({ ...prev, [habit.key]: !prev[habit.key] }))
+                  }
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.habitCheckbox, checked && styles.habitCheckboxChecked]}>
+                    {checked && <Text style={styles.habitCheckmark}>✓</Text>}
+                  </View>
+                  <Text style={styles.habitEmoji}>{habit.emoji}</Text>
+                  <Text style={[styles.habitLabel, checked && styles.habitLabelChecked]}>
+                    {habit.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         )}
 
@@ -326,6 +367,63 @@ const styles = StyleSheet.create({
     color: '#333',
     minHeight: 90,
     backgroundColor: '#fafafa',
+  },
+  habitHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  habitScoreBadge: {
+    backgroundColor: '#5B7FFF',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  habitScoreText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  habitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f5f5f5',
+  },
+  habitCheckbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#ddd',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f5f5f5',
+    marginRight: 10,
+  },
+  habitCheckboxChecked: {
+    backgroundColor: '#5B7FFF',
+    borderColor: '#5B7FFF',
+  },
+  habitCheckmark: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  habitEmoji: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  habitLabel: {
+    fontSize: 15,
+    color: '#333',
+    fontWeight: '500',
+  },
+  habitLabelChecked: {
+    color: '#5B7FFF',
+    fontWeight: '700',
   },
   saveButton: {
     backgroundColor: '#5B7FFF',

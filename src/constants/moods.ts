@@ -1,4 +1,4 @@
-import { MoodMetric } from '../types';
+import { MoodMetric, Habit } from '../types';
 
 export const POSITIVE_METRICS: MoodMetric[] = [
   { key: 'mood',       label: 'Mood',       category: 'positive', color: '#4CAF50' },
@@ -23,3 +23,17 @@ export const SCALE_LABELS: Record<number, string> = {
   5: 'Moderate',
   10: 'Extremely',
 };
+
+export const AVAILABLE_HABITS: Habit[] = [
+  { key: 'meditation',     label: 'Meditation',      emoji: '🧘' },
+  { key: 'gratitude',      label: 'Gratitude',       emoji: '🙏' },
+  { key: 'read_book',      label: 'Read a Book',     emoji: '📚' },
+  { key: 'learn',          label: 'Learn Something', emoji: '💡' },
+  { key: 'healthy_eating', label: 'Healthy Eating',  emoji: '🥗' },
+  { key: 'exercise',       label: 'Exercise',        emoji: '💪' },
+  { key: 'cardio',         label: 'Cardio',          emoji: '🏃' },
+  { key: 'walk',           label: 'Walk',            emoji: '🚶' },
+  { key: 'run',            label: 'Run',             emoji: '🏃‍♂️' },
+  { key: 'smile',          label: 'Smile',           emoji: '😊' },
+  { key: 'journal',        label: 'Journal',         emoji: '📓' },
+];

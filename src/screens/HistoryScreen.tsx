@@ -12,8 +12,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { MoodEntry } from '../types';
 import { loadEntriesSorted, deleteEntry } from '../storage/moodStorage';
-import { POSITIVE_METRICS, NEGATIVE_METRICS } from '../constants/moods';
-import { calculateWellnessScore, wellnessColor, wellnessLabel } from '../utils/wellness';
+import { POSITIVE_METRICS, NEGATIVE_METRICS, AVAILABLE_HABITS } from '../constants/moods';
+import { calculateWellnessScore, calculateHabitScore, wellnessColor, wellnessLabel } from '../utils/wellness';
 
 const ALL_METRICS = [...POSITIVE_METRICS, ...NEGATIVE_METRICS];
 
@@ -83,6 +83,35 @@ function EntryCard({
               <Text style={styles.notesText}>{entry.notes}</Text>
             </>
           ) : null}
+          {entry.habits && Object.keys(entry.habits).length > 0 ? (() => {
+            const trackedKeys = AVAILABLE_HABITS.filter((h) => entry.habits![h.key] !== undefined).map((h) => h.key);
+            const habitScore = calculateHabitScore(entry.habits, trackedKeys);
+            const checkedHabits = AVAILABLE_HABITS.filter((h) => entry.habits![h.key] === true);
+            const uncheckedHabits = AVAILABLE_HABITS.filter(
+              (h) => entry.habits![h.key] === false,
+            );
+            return (
+              <>
+                <View style={styles.divider} />
+                <View style={styles.habitsHeader}>
+                  <Text style={styles.groupLabel}>Habits</Text>
+                  <Text style={styles.habitScore}>{habitScore}% ({checkedHabits.length}/{trackedKeys.length})</Text>
+                </View>
+                <View style={styles.habitChips}>
+                  {checkedHabits.map((h) => (
+                    <View key={h.key} style={styles.habitChipOn}>
+                      <Text style={styles.habitChipText}>{h.emoji} {h.label}</Text>
+                    </View>
+                  ))}
+                  {uncheckedHabits.map((h) => (
+                    <View key={h.key} style={styles.habitChipOff}>
+                      <Text style={styles.habitChipTextOff}>{h.emoji} {h.label}</Text>
+                    </View>
+                  ))}
+                </View>
+              </>
+            );
+          })() : null}
         </>
       )}
     </TouchableOpacity>
@@ -239,6 +268,48 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#555',
     lineHeight: 18,
+  },
+  habitsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  habitScore: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#5B7FFF',
+  },
+  habitChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  habitChipOn: {
+    backgroundColor: '#EEF2FF',
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: '#5B7FFF',
+  },
+  habitChipText: {
+    fontSize: 12,
+    color: '#5B7FFF',
+    fontWeight: '600',
+  },
+  habitChipOff: {
+    backgroundColor: '#f5f5f5',
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  habitChipTextOff: {
+    fontSize: 12,
+    color: '#bbb',
+    fontWeight: '500',
   },
   empty: {
     flex: 1,

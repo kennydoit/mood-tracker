@@ -82,6 +82,7 @@ export async function saveEntryForDate(
   date: Date,
   values: Record<string, number>,
   notes?: string,
+  habits?: Record<string, boolean>,
 ): Promise<void> {
   const key = toDateKey(date);
   const entries = await loadEntries();
@@ -92,6 +93,7 @@ export async function saveEntryForDate(
       ...entries[existingIndex],
       values,
       notes,
+      habits,
     };
   } else {
     // Preserve the selected date but set time to noon so it sorts predictably
@@ -102,6 +104,7 @@ export async function saveEntryForDate(
       date: entryDate.toISOString(),
       values,
       notes,
+      habits,
     });
   }
 

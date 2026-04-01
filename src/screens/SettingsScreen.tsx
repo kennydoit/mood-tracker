@@ -17,6 +17,8 @@ import {
   scheduleDailyReminder,
   requestPermissions,
 } from '../notifications/reminderService';
+import { AVAILABLE_HABITS } from '../constants/moods';
+import { loadTrackedHabits, saveTrackedHabits } from '../storage/habitSettings';
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const MINUTES = [0, 15, 30, 45];
@@ -37,12 +39,22 @@ export default function SettingsScreen() {
     hour: 20,
     minute: 0,
   });
+  const [trackedHabits, setTrackedHabits] = useState<string[]>([]);
 
   useFocusEffect(
     useCallback(() => {
       loadReminderSettings().then(setSettings);
+      loadTrackedHabits().then(setTrackedHabits);
     }, []),
   );
+
+  const handleHabitToggle = async (key: string) => {
+    const updated = trackedHabits.includes(key)
+      ? trackedHabits.filter((k) => k !== key)
+      : [...trackedHabits, key];
+    setTrackedHabits(updated);
+    await saveTrackedHabits(updated);
+  };
 
   const handleToggle = async (value: boolean) => {
     if (value) {
@@ -153,6 +165,31 @@ export default function SettingsScreen() {
         </View>
       )}
 
+      {/* Habits to Track */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Habits to Track</Text>
+        <Text style={styles.rowSub}>Select which habits you want to log each day</Text>
+        <View style={{ marginTop: 12 }}>
+          {AVAILABLE_HABITS.map((habit) => {
+            const isSelected = trackedHabits.includes(habit.key);
+            return (
+              <TouchableOpacity
+                key={habit.key}
+                style={styles.habitRow}
+                onPress={() => handleHabitToggle(habit.key)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.habitEmoji}>{habit.emoji}</Text>
+                <Text style={styles.habitLabel}>{habit.label}</Text>
+                <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
+                  {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+
       {/* About */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>About</Text>
@@ -250,5 +287,41 @@ const styles = StyleSheet.create({
     color: '#aaa',
     marginTop: 4,
     lineHeight: 18,
+  },
+  habitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f5f5f5',
+  },
+  habitEmoji: {
+    fontSize: 20,
+    width: 32,
+  },
+  habitLabel: {
+    flex: 1,
+    fontSize: 15,
+    color: '#333',
+    fontWeight: '500',
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#ddd',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  checkboxActive: {
+    backgroundColor: '#5B7FFF',
+    borderColor: '#5B7FFF',
+  },
+  checkmark: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
