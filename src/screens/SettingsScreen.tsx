@@ -251,39 +251,43 @@ export default function SettingsScreen() {
         {expandedMoods && (
           <View style={{ marginTop: 12 }}>
             <Text style={styles.moodSectionLabel}>Positive</Text>
-            {POSITIVE_METRICS.map((metric) => {
+            {POSITIVE_METRICS.map((metric, index, arr) => {
               const isSelected = trackedMoodStates.includes(metric.key);
               return (
-                <TouchableOpacity
-                  key={metric.key}
-                  style={styles.habitRow}
-                  onPress={() => handleMoodStateToggle(metric.key)}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.colorDot, { backgroundColor: metric.color }]} />
-                  <Text style={styles.habitLabel}>{metric.label}</Text>
-                  <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
-                    {isSelected && <Text style={styles.checkmark}>✓</Text>}
-                  </View>
-                </TouchableOpacity>
+                <React.Fragment key={metric.key}>
+                  <TouchableOpacity
+                    style={styles.habitRow}
+                    onPress={() => handleMoodStateToggle(metric.key)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.colorDot, { backgroundColor: metric.color }]} />
+                    <Text style={styles.habitLabel}>{metric.label}</Text>
+                    <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
+                      {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                    </View>
+                  </TouchableOpacity>
+                  {index < arr.length - 1 && <View style={styles.moodDivider} />}
+                </React.Fragment>
               );
             })}
             <Text style={[styles.moodSectionLabel, { marginTop: 12 }]}>Negative</Text>
-            {NEGATIVE_METRICS.map((metric) => {
+            {NEGATIVE_METRICS.map((metric, index, arr) => {
               const isSelected = trackedMoodStates.includes(metric.key);
               return (
-                <TouchableOpacity
-                  key={metric.key}
-                  style={styles.habitRow}
-                  onPress={() => handleMoodStateToggle(metric.key)}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.colorDot, { backgroundColor: metric.color }]} />
-                  <Text style={styles.habitLabel}>{metric.label}</Text>
-                  <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
-                    {isSelected && <Text style={styles.checkmark}>✓</Text>}
-                  </View>
-                </TouchableOpacity>
+                <React.Fragment key={metric.key}>
+                  <TouchableOpacity
+                    style={styles.habitRow}
+                    onPress={() => handleMoodStateToggle(metric.key)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.colorDot, { backgroundColor: metric.color }]} />
+                    <Text style={styles.habitLabel}>{metric.label}</Text>
+                    <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
+                      {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                    </View>
+                  </TouchableOpacity>
+                  {index < arr.length - 1 && <View style={styles.moodDivider} />}
+                </React.Fragment>
               );
             })}
           </View>
@@ -455,6 +459,11 @@ function makeStyles(c: ThemeColors) {
       height: 12,
       borderRadius: 6,
       marginRight: 8,
+    },
+    moodDivider: {
+      height: 1,
+      backgroundColor: '#FF69B4',
+      marginVertical: 8,
     },
   });
 }

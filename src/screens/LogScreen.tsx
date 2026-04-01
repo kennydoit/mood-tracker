@@ -189,16 +189,18 @@ export default function LogScreen() {
             <Text style={styles.sectionSub}>Intensity Scales: 1-10</Text>
             {[...POSITIVE_METRICS, ...NEGATIVE_METRICS]
               .filter((metric) => trackedMoodStates.includes(metric.key))
-              .map((metric) => (
-                <MoodSlider
-                  key={metric.key}
-                  label={metric.label}
-                  value={values[metric.key]}
-                  color={metric.color}
-                  onChange={(v) => setValue(metric.key, v)}
-                  startLabel={METRIC_LABELS[metric.key]?.start}
-                  endLabel={METRIC_LABELS[metric.key]?.end}
-                />
+              .map((metric, index, filtered) => (
+                <React.Fragment key={metric.key}>
+                  <MoodSlider
+                    label={metric.label}
+                    value={values[metric.key]}
+                    color={metric.color}
+                    onChange={(v) => setValue(metric.key, v)}
+                    startLabel={METRIC_LABELS[metric.key]?.start}
+                    endLabel={METRIC_LABELS[metric.key]?.end}
+                  />
+                  {index < filtered.length - 1 && <View style={styles.metricDivider} />}
+                </React.Fragment>
               ))}
           </View>
         )}
@@ -213,27 +215,29 @@ export default function LogScreen() {
               </View>
             </View>
             <Text style={styles.sectionSub}>Build routines that support your well‑being</Text>
-            {AVAILABLE_HABITS.filter((h) => trackedHabits.includes(h.key)).map((habit) => {
+            {AVAILABLE_HABITS.filter((h) => trackedHabits.includes(h.key)).map((habit, index, filtered) => {
               const checked = habits[habit.key] === true;
               return (
-                <TouchableOpacity
-                  key={habit.key}
-                  style={styles.habitRow}
-                  onPress={() => {
-                    setHabits((prev) => ({ ...prev, [habit.key]: !prev[habit.key] }));
-                    // Mark habits as explicitly entered when user interacts with them
-                    setHabitsEntered(true);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.habitCheckbox, checked && styles.habitCheckboxChecked]}>
-                    {checked && <Text style={styles.habitCheckmark}>✓</Text>}
-                  </View>
-                  <Text style={styles.habitEmoji}>{habit.emoji}</Text>
-                  <Text style={[styles.habitLabel, checked && styles.habitLabelChecked]}>
-                    {habit.label}
-                  </Text>
-                </TouchableOpacity>
+                <React.Fragment key={habit.key}>
+                  <TouchableOpacity
+                    style={styles.habitRow}
+                    onPress={() => {
+                      setHabits((prev) => ({ ...prev, [habit.key]: !prev[habit.key] }));
+                      // Mark habits as explicitly entered when user interacts with them
+                      setHabitsEntered(true);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.habitCheckbox, checked && styles.habitCheckboxChecked]}>
+                      {checked && <Text style={styles.habitCheckmark}>✓</Text>}
+                    </View>
+                    <Text style={styles.habitEmoji}>{habit.emoji}</Text>
+                    <Text style={[styles.habitLabel, checked && styles.habitLabelChecked]}>
+                      {habit.label}
+                    </Text>
+                  </TouchableOpacity>
+                  {index < filtered.length - 1 && <View style={styles.habitDivider} />}
+                </React.Fragment>
               );
             })}
           </View>
@@ -373,6 +377,16 @@ function makeStyles(c: ThemeColors) {
       fontSize: 12,
       color: c.textMuted,
       marginBottom: 12,
+    },
+    metricDivider: {
+      height: 1,
+      backgroundColor: '#FF69B4',
+      marginVertical: 12,
+    },
+    habitDivider: {
+      height: 1,
+      backgroundColor: '#FF69B4',
+      marginVertical: 8,
     },
     notesInput: {
       borderWidth: 1,
