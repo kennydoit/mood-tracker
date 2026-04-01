@@ -12,9 +12,11 @@ interface Props {
   value: number;
   color: string;
   onChange: (value: number) => void;
+  startLabel?: string;
+  endLabel?: string;
 }
 
-export default function MoodSlider({ label, value, color, onChange }: Props) {
+export default function MoodSlider({ label, value, color, onChange, startLabel = 'Not at all', endLabel = 'Extremely' }: Props) {
   const { colors } = useTheme();
   const styles = makeStyles(colors);
   return (
@@ -44,8 +46,8 @@ export default function MoodSlider({ label, value, color, onChange }: Props) {
         })}
       </View>
       <View style={styles.scaleLabels}>
-        <Text style={styles.scaleLabel}>Not at all</Text>
-        <Text style={styles.scaleLabel}>Extremely</Text>
+        <Text style={styles.scaleLabel}>{startLabel}</Text>
+        <Text style={styles.scaleLabel}>{endLabel}</Text>
       </View>
     </View>
   );

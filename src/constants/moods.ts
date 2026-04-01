@@ -24,6 +24,19 @@ export const SCALE_LABELS: Record<number, string> = {
   10: 'Extremely',
 };
 
+export const METRIC_LABELS: Record<string, { start: string; end: string }> = {
+  mood: { start: 'Struggling', end: 'Thriving' },
+  vitality: { start: 'Drained', end: 'Energized' },
+  motivation: { start: 'No Drive', end: 'Locked In' },
+  energy: { start: 'Out of Battery', end: 'Energized' },
+  sleep: { start: 'Low Quality', end: 'Fully Rested' },
+  depression: { start: 'Clear Skies', end: 'Heavy Clouds' },
+  sadness: { start: 'Not at all', end: 'Extremely' },
+  anxiety: { start: 'At Ease', end: 'On Edge' },
+  nervousness: { start: 'Comfortable', end: 'Tense' },
+  irritability: { start: 'Unbothered', end: 'Triggered' },
+};
+
 export const AVAILABLE_HABITS: Habit[] = [
   { key: 'meditation',     label: 'Meditation',      emoji: '🧘' },
   { key: 'gratitude',      label: 'Gratitude',       emoji: '🙏' },

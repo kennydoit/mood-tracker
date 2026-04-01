@@ -1,49 +1,54 @@
 import { POSITIVE_METRICS, NEGATIVE_METRICS } from '../constants/moods';
 
 /**
- * Calculates a Wellness Score (0–100) from mood metric values and optional habits.
+ * Calculates a Wellness Score (0–100) from entered metric values and optional habits.
  *
  * Formula:
- *  - Positive metrics: normalised contribution = (value - 1) / 9  → 0..1
- *  - Negative metrics: normalised contribution = (10 - value) / 9 → 0..1 (inverted)
- *  - Each tracked habit: contribution = 1 if checked, 0 if unchecked → 0..1
- *  - All components averaged equally, multiplied by 100.
+ *  - Positive metrics: contribute their value (1–10) directly
+ *  - Negative metrics: contribute (10 - value + 1) to invert the scale
+ *  - Habits: contribute (checked / tracked) * 10 if explicitly entered and tracked
+ *  - Score = (sum of all contributions) / (count of entered items * 10) * 100
  *
- * Habits blend in proportionally — if you track 5 habits they contribute
- * 5 slots out of (10 metrics + 5 habits) = 15 total.
+ * Only metrics/habits marked as explicitly entered are counted.
+ * Returns -1 if no metrics have been entered, so no score is shown.
  */
 export function calculateWellnessScore(
   values: Record<string, number>,
   habits?: Record<string, boolean>,
+  enteredMetrics?: Set<string>,
 ): number {
   let total = 0;
   let count = 0;
 
+  // Count only explicitly entered positive metrics
   for (const m of POSITIVE_METRICS) {
-    const v = values[m.key];
-    if (v !== undefined) {
-      total += (v - 1) / 9;
+    if (enteredMetrics?.has(m.key)) {
+      total += values[m.key];
       count++;
     }
   }
 
+  // Count only explicitly entered negative metrics (inverted)
   for (const m of NEGATIVE_METRICS) {
-    const v = values[m.key];
-    if (v !== undefined) {
-      total += (10 - v) / 9;
+    if (enteredMetrics?.has(m.key)) {
+      total += 11 - values[m.key];
       count++;
     }
   }
 
-  if (habits) {
-    for (const key of Object.keys(habits)) {
-      total += habits[key] ? 1 : 0;
+  // Count habits as a group if they've been explicitly entered and any are tracked
+  if (enteredMetrics?.has('__habits_entered__') && habits) {
+    const trackedKeys = Object.keys(habits);
+    if (trackedKeys.length > 0) {
+      const checked = trackedKeys.filter((k) => habits[k] === true).length;
+      total += (checked / trackedKeys.length) * 10;
       count++;
     }
   }
 
-  if (count === 0) return 0;
-  return Math.round((total / count) * 100);
+  // Return -1 if no metrics entered, so no score is displayed
+  if (count === 0) return -1;
+  return Math.round((total / (count * 10)) * 100);
 }
 
 /**

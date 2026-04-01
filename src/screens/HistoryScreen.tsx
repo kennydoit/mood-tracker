@@ -29,9 +29,10 @@ function EntryCard({
   const styles = makeStyles(colors);
   const [expanded, setExpanded] = useState(false);
   const date = new Date(entry.date);
-  const score = calculateWellnessScore(entry.values, entry.habits);
-  const scoreColor = wellnessColor(score);
-  const scoreLabel = wellnessLabel(score);
+  const enteredMetrics = new Set(Object.keys(entry.values));
+  const score = calculateWellnessScore(entry.values, entry.habits, enteredMetrics);
+  const scoreColor = score === -1 ? '#ddd' : wellnessColor(score);
+  const scoreLabel = score === -1 ? '—' : wellnessLabel(score);
 
   return (
     <TouchableOpacity

@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
-import { POSITIVE_METRICS, NEGATIVE_METRICS, AVAILABLE_HABITS } from '../constants/moods';
+import { POSITIVE_METRICS, NEGATIVE_METRICS, AVAILABLE_HABITS, METRIC_LABELS } from '../constants/moods';
 import MoodSlider from '../components/MoodSlider';
 import WeekStrip from '../components/WeekStrip';
 import {
@@ -51,6 +51,7 @@ export default function LogScreen() {
   const [existingEntryId, setExistingEntryId] = useState<string | null>(null);
   const [showNegative, setShowNegative] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [enteredMetrics, setEnteredMetrics] = useState<Set<string>>(new Set());
 
   // Reload the dot-map and tracked habits whenever the screen comes into focus
   useFocusEffect(
@@ -68,17 +69,29 @@ export default function LogScreen() {
         setNotes(entry.notes ?? '');
         setExistingEntryId(entry.id);
         setHabits(entry.habits ?? {});
+        // When loading an existing entry, all its metrics are considered entered
+        const entered = new Set(Object.keys(entry.values));
+        // If the entry has habits, mark them as entered too
+        if (entry.habits && Object.keys(entry.habits).length > 0) {
+          entered.add('__habits_entered__');
+        }
+        setEnteredMetrics(entered);
       } else {
         setValues(defaultValues());
         setNotes('');
         setExistingEntryId(null);
         setHabits({});
+        // When starting fresh, no metrics are entered yet
+        setEnteredMetrics(new Set());
       }
     });
   }, [selectedDate]);
 
-  const setValue = (key: string, val: number) =>
+  const setValue = (key: string, val: number) => {
     setValues((prev) => ({ ...prev, [key]: val }));
+    // Mark this metric as explicitly entered
+    setEnteredMetrics((prev) => new Set([...prev, key]));
+  };
 
   const handleSelectDate = (date: Date) => {
     setSelectedDate(date);
@@ -103,9 +116,9 @@ export default function LogScreen() {
   const trackedHabitsRecord = trackedHabits.length > 0
     ? Object.fromEntries(trackedHabits.map((k) => [k, habits[k] ?? false]))
     : undefined;
-  const score = calculateWellnessScore(values, trackedHabitsRecord);
-  const scoreColor = wellnessColor(score);
-  const scoreLabel = wellnessLabel(score);
+  const score = calculateWellnessScore(values, trackedHabitsRecord, enteredMetrics);
+  const scoreColor = score === -1 ? '#ddd' : wellnessColor(score);
+  const scoreLabel = score === -1 ? '—' : wellnessLabel(score);
   const habitScore = calculateHabitScore(habits, trackedHabits);
   const isToday = toDateKey(selectedDate) === toDateKey(new Date());
   const isEditing = !!existingEntryId;
@@ -139,10 +152,10 @@ export default function LogScreen() {
         <View style={[styles.wellnessBanner, { borderColor: scoreColor }]}>
           <View style={styles.wellnessLeft}>
             <Text style={styles.wellnessTitle}>Wellness Score</Text>
-            <Text style={styles.wellnessSubtitle}>Weighted average of all metrics</Text>
+            <Text style={styles.wellnessSubtitle}>{score === -1 ? 'Start entering metrics to see your score' : 'Weighted average of all metrics'}</Text>
           </View>
           <View style={styles.wellnessRight}>
-            <Text style={[styles.wellnessScore, { color: scoreColor }]}>{score}</Text>
+            <Text style={[styles.wellnessScore, { color: scoreColor }]}>{score === -1 ? '—' : score}</Text>
             <Text style={[styles.wellnessLabel, { color: scoreColor }]}>{scoreLabel}</Text>
           </View>
         </View>
@@ -164,6 +177,8 @@ export default function LogScreen() {
               value={values[metric.key]}
               color={metric.color}
               onChange={(v) => setValue(metric.key, v)}
+              startLabel={METRIC_LABELS[metric.key]?.start}
+              endLabel={METRIC_LABELS[metric.key]?.end}
             />
           ))}
         </View>
@@ -190,6 +205,8 @@ export default function LogScreen() {
                 value={values[metric.key]}
                 color={metric.color}
                 onChange={(v) => setValue(metric.key, v)}
+                startLabel={METRIC_LABELS[metric.key]?.start}
+                endLabel={METRIC_LABELS[metric.key]?.end}
               />
             ))}
           </View>
@@ -211,9 +228,11 @@ export default function LogScreen() {
                 <TouchableOpacity
                   key={habit.key}
                   style={styles.habitRow}
-                  onPress={() =>
-                    setHabits((prev) => ({ ...prev, [habit.key]: !prev[habit.key] }))
-                  }
+                  onPress={() => {
+                    setHabits((prev) => ({ ...prev, [habit.key]: !prev[habit.key] }));
+                    // Mark habits as explicitly entered when user interacts with them
+                    setEnteredMetrics((prev) => new Set([...prev, '__habits_entered__']));
+                  }}
                   activeOpacity={0.7}
                 >
                   <View style={[styles.habitCheckbox, checked && styles.habitCheckboxChecked]}>
