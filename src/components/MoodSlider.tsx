@@ -26,24 +26,22 @@ export default function MoodSlider({ label, value, color, onChange, startLabel =
         {value !== undefined && <Text style={[styles.valueText, { color }]}>{value}</Text>}
       </View>
       <View style={styles.buttonRow}>
-        {Array.from({ length: 10 }, (_, i) => i + 1).map((n, index) => {
+        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
           const selected = n === value;
           return (
-            <React.Fragment key={n}>
-              <TouchableOpacity
-                onPress={() => onChange(selected ? undefined : n)}
-                style={[
-                  styles.numButton,
-                  selected && { backgroundColor: color, borderColor: color },
-                ]}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.numText, selected && styles.numTextSelected]}>
-                  {n}
-                </Text>
-              </TouchableOpacity>
-              {index < 9 && <View style={styles.divider} />}
-            </React.Fragment>
+            <TouchableOpacity
+              key={n}
+              onPress={() => onChange(selected ? undefined : n)}
+              style={[
+                styles.numButton,
+                selected && { backgroundColor: color, borderColor: color },
+              ]}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.numText, selected && styles.numTextSelected]}>
+                {n}
+              </Text>
+            </TouchableOpacity>
           );
         })}
       </View>
@@ -90,11 +88,7 @@ function makeStyles(c: ThemeColors) {
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: c.cardAlt,
-    },
-    divider: {
-      height: 18,
-      width: 1.5,
-      backgroundColor: c.divider,
+      marginHorizontal: 2,
     },
     numText: {
       fontSize: 12,
