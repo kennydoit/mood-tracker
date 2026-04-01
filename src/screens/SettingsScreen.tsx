@@ -19,6 +19,7 @@ import {
 } from '../notifications/reminderService';
 import { AVAILABLE_HABITS, POSITIVE_METRICS, NEGATIVE_METRICS } from '../constants/moods';
 import { loadTrackedHabits, saveTrackedHabits } from '../storage/habitSettings';
+import { loadTrackedMoodStates, saveTrackedMoodStates } from '../storage/moodStateSettings';
 import { useTheme, ThemeColors, ThemeMode } from '../theme';
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -45,11 +46,13 @@ export default function SettingsScreen() {
   const [trackedHabits, setTrackedHabits] = useState<string[]>([]);
   const [expandedHabits, setExpandedHabits] = useState(false);
   const [expandedMoods, setExpandedMoods] = useState(false);
+  const [trackedMoodStates, setTrackedMoodStates] = useState<string[]>([]);
 
   useFocusEffect(
     useCallback(() => {
       loadReminderSettings().then(setSettings);
       loadTrackedHabits().then(setTrackedHabits);
+      loadTrackedMoodStates().then(setTrackedMoodStates);
     }, []),
   );
 
@@ -59,6 +62,14 @@ export default function SettingsScreen() {
       : [...trackedHabits, key];
     setTrackedHabits(updated);
     await saveTrackedHabits(updated);
+  };
+
+  const handleMoodStateToggle = async (key: string) => {
+    const updated = trackedMoodStates.includes(key)
+      ? trackedMoodStates.filter((k) => k !== key)
+      : [...trackedMoodStates, key];
+    setTrackedMoodStates(updated);
+    await saveTrackedMoodStates(updated);
   };
 
   const handleToggle = async (value: boolean) => {
@@ -240,19 +251,41 @@ export default function SettingsScreen() {
         {expandedMoods && (
           <View style={{ marginTop: 12 }}>
             <Text style={styles.moodSectionLabel}>Positive</Text>
-            {POSITIVE_METRICS.map((metric) => (
-              <View key={metric.key} style={styles.habitRow}>
-                <View style={[styles.colorDot, { backgroundColor: metric.color }]} />
-                <Text style={styles.habitLabel}>{metric.label}</Text>
-              </View>
-            ))}
+            {POSITIVE_METRICS.map((metric) => {
+              const isSelected = trackedMoodStates.includes(metric.key);
+              return (
+                <TouchableOpacity
+                  key={metric.key}
+                  style={styles.habitRow}
+                  onPress={() => handleMoodStateToggle(metric.key)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.colorDot, { backgroundColor: metric.color }]} />
+                  <Text style={styles.habitLabel}>{metric.label}</Text>
+                  <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
+                    {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
             <Text style={[styles.moodSectionLabel, { marginTop: 12 }]}>Negative</Text>
-            {NEGATIVE_METRICS.map((metric) => (
-              <View key={metric.key} style={styles.habitRow}>
-                <View style={[styles.colorDot, { backgroundColor: metric.color }]} />
-                <Text style={styles.habitLabel}>{metric.label}</Text>
-              </View>
-            ))}
+            {NEGATIVE_METRICS.map((metric) => {
+              const isSelected = trackedMoodStates.includes(metric.key);
+              return (
+                <TouchableOpacity
+                  key={metric.key}
+                  style={styles.habitRow}
+                  onPress={() => handleMoodStateToggle(metric.key)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.colorDot, { backgroundColor: metric.color }]} />
+                  <Text style={styles.habitLabel}>{metric.label}</Text>
+                  <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
+                    {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         )}
       </View>
