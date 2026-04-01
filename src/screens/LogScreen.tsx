@@ -86,10 +86,15 @@ export default function LogScreen() {
     });
   }, [selectedDate]);
 
-  const setValue = (key: string, val: number) => {
+  const setValue = (key: string, val: number | undefined) => {
     setValues((prev) => ({ ...prev, [key]: val }));
-    // Mark this metric as explicitly entered
-    setEnteredMetrics((prev) => prev.includes(key) ? prev : [...prev, key]);
+    // Mark this metric as explicitly entered only if it's not undefined
+    if (val !== undefined) {
+      setEnteredMetrics((prev) => prev.includes(key) ? prev : [...prev, key]);
+    } else {
+      // Remove from entered metrics if deselected
+      setEnteredMetrics((prev) => prev.filter((k) => k !== key));
+    }
   };
 
   const handleSelectDate = (date: Date) => {

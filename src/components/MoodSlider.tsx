@@ -11,7 +11,7 @@ interface Props {
   label: string;
   value: number | undefined;
   color: string;
-  onChange: (value: number) => void;
+  onChange: (value: number | undefined) => void;
   startLabel?: string;
   endLabel?: string;
 }
@@ -31,7 +31,7 @@ export default function MoodSlider({ label, value, color, onChange, startLabel =
           return (
             <TouchableOpacity
               key={n}
-              onPress={() => onChange(n)}
+              onPress={() => onChange(selected ? undefined : n)}
               style={[
                 styles.numButton,
                 selected && { backgroundColor: color, borderColor: color },
