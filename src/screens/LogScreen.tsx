@@ -25,10 +25,10 @@ import { toDateKey } from '../utils/dateUtils';
 import { calculateWellnessScore, calculateHabitScore, wellnessColor, wellnessLabel } from '../utils/wellness';
 import { useTheme, ThemeColors } from '../theme';
 
-const defaultValues = (): Record<string, number> => {
-  const vals: Record<string, number> = {};
+const defaultValues = (): Record<string, number | undefined> => {
+  const vals: Record<string, number | undefined> = {};
   [...POSITIVE_METRICS, ...NEGATIVE_METRICS].forEach((m) => {
-    vals[m.key] = 5;
+    vals[m.key] = undefined;
   });
   return vals;
 };
@@ -44,14 +44,15 @@ export default function LogScreen() {
   const styles = makeStyles(colors);
   const [selectedDate, setSelectedDate] = useState<Date>(todayMidnight());
   const [entryDateKeys, setEntryDateKeys] = useState<Set<string>>(new Set());
-  const [values, setValues] = useState<Record<string, number>>(defaultValues());
+  const [values, setValues] = useState<Record<string, number | undefined>>(defaultValues());
   const [notes, setNotes] = useState('');
   const [habits, setHabits] = useState<Record<string, boolean>>({});
   const [trackedHabits, setTrackedHabits] = useState<string[]>([]);
   const [existingEntryId, setExistingEntryId] = useState<string | null>(null);
   const [showNegative, setShowNegative] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [enteredMetrics, setEnteredMetrics] = useState<Set<string>>(new Set());
+  const [enteredMetrics, setEnteredMetrics] = useState<string[]>([]);
+  const [habitsEntered, setHabitsEntered] = useState(false);
 
   // Reload the dot-map and tracked habits whenever the screen comes into focus
   useFocusEffect(
@@ -70,19 +71,17 @@ export default function LogScreen() {
         setExistingEntryId(entry.id);
         setHabits(entry.habits ?? {});
         // When loading an existing entry, all its metrics are considered entered
-        const entered = new Set(Object.keys(entry.values));
-        // If the entry has habits, mark them as entered too
-        if (entry.habits && Object.keys(entry.habits).length > 0) {
-          entered.add('__habits_entered__');
-        }
-        setEnteredMetrics(entered);
+        setEnteredMetrics(Object.keys(entry.values));
+        // Mark habits as entered if they exist
+        setHabitsEntered(!!(entry.habits && Object.keys(entry.habits).length > 0));
       } else {
         setValues(defaultValues());
         setNotes('');
         setExistingEntryId(null);
         setHabits({});
         // When starting fresh, no metrics are entered yet
-        setEnteredMetrics(new Set());
+        setEnteredMetrics([]);
+        setHabitsEntered(false);
       }
     });
   }, [selectedDate]);
@@ -90,7 +89,7 @@ export default function LogScreen() {
   const setValue = (key: string, val: number) => {
     setValues((prev) => ({ ...prev, [key]: val }));
     // Mark this metric as explicitly entered
-    setEnteredMetrics((prev) => new Set([...prev, key]));
+    setEnteredMetrics((prev) => prev.includes(key) ? prev : [...prev, key]);
   };
 
   const handleSelectDate = (date: Date) => {
@@ -100,7 +99,11 @@ export default function LogScreen() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await saveEntryForDate(selectedDate, values, notes.trim() || undefined, habits);
+      // Filter out undefined values before saving
+      const definedValues = Object.fromEntries(
+        Object.entries(values).filter(([, v]) => v !== undefined)
+      ) as Record<string, number>;
+      await saveEntryForDate(selectedDate, definedValues, notes.trim() || undefined, habits);
       // Refresh dot map
       const map = await loadDateKeyMap();
       setEntryDateKeys(new Set(Object.keys(map)));
@@ -116,7 +119,13 @@ export default function LogScreen() {
   const trackedHabitsRecord = trackedHabits.length > 0
     ? Object.fromEntries(trackedHabits.map((k) => [k, habits[k] ?? false]))
     : undefined;
-  const score = calculateWellnessScore(values, trackedHabitsRecord, enteredMetrics);
+  const enteredMetricsSet = new Set(enteredMetrics);
+  if (habitsEntered) enteredMetricsSet.add('__habits_entered__');
+  // Filter out undefined values for wellness score calculation
+  const definedValuesForScore = Object.fromEntries(
+    Object.entries(values).filter(([, v]) => v !== undefined)
+  ) as Record<string, number>;
+  const score = calculateWellnessScore(definedValuesForScore, trackedHabitsRecord, enteredMetricsSet);
   const scoreColor = score === -1 ? '#ddd' : wellnessColor(score);
   const scoreLabel = score === -1 ? '—' : wellnessLabel(score);
   const habitScore = calculateHabitScore(habits, trackedHabits);
@@ -231,7 +240,7 @@ export default function LogScreen() {
                   onPress={() => {
                     setHabits((prev) => ({ ...prev, [habit.key]: !prev[habit.key] }));
                     // Mark habits as explicitly entered when user interacts with them
-                    setEnteredMetrics((prev) => new Set([...prev, '__habits_entered__']));
+                    setHabitsEntered(true);
                   }}
                   activeOpacity={0.7}
                 >

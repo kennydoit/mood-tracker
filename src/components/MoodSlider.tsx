@@ -9,7 +9,7 @@ import { useTheme, ThemeColors } from '../theme';
 
 interface Props {
   label: string;
-  value: number;
+  value: number | undefined;
   color: string;
   onChange: (value: number) => void;
   startLabel?: string;
@@ -23,7 +23,7 @@ export default function MoodSlider({ label, value, color, onChange, startLabel =
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.label}>{label}</Text>
-        <Text style={[styles.valueText, { color }]}>{value}</Text>
+        {value !== undefined && <Text style={[styles.valueText, { color }]}>{value}</Text>}
       </View>
       <View style={styles.buttonRow}>
         {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
@@ -81,7 +81,7 @@ function makeStyles(c: ThemeColors) {
       width: 28,
       height: 28,
       borderRadius: 14,
-      borderWidth: 1.5,
+      borderWidth: 0,
       borderColor: c.border,
       alignItems: 'center',
       justifyContent: 'center',
