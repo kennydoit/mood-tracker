@@ -17,7 +17,7 @@ import {
   scheduleDailyReminder,
   requestPermissions,
 } from '../notifications/reminderService';
-import { AVAILABLE_HABITS } from '../constants/moods';
+import { AVAILABLE_HABITS, POSITIVE_METRICS, NEGATIVE_METRICS } from '../constants/moods';
 import { loadTrackedHabits, saveTrackedHabits } from '../storage/habitSettings';
 import { useTheme, ThemeColors, ThemeMode } from '../theme';
 
@@ -43,6 +43,8 @@ export default function SettingsScreen() {
     minute: 0,
   });
   const [trackedHabits, setTrackedHabits] = useState<string[]>([]);
+  const [expandedHabits, setExpandedHabits] = useState(false);
+  const [expandedMoods, setExpandedMoods] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -188,27 +190,71 @@ export default function SettingsScreen() {
 
       {/* Habits to Track */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Habits to Track</Text>
-        <Text style={styles.rowSub}>Select which habits you want to log each day</Text>
-        <View style={{ marginTop: 12 }}>
-          {AVAILABLE_HABITS.map((habit) => {
-            const isSelected = trackedHabits.includes(habit.key);
-            return (
-              <TouchableOpacity
-                key={habit.key}
-                style={styles.habitRow}
-                onPress={() => handleHabitToggle(habit.key)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.habitEmoji}>{habit.emoji}</Text>
-                <Text style={styles.habitLabel}>{habit.label}</Text>
-                <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
-                  {isSelected && <Text style={styles.checkmark}>✓</Text>}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        <TouchableOpacity
+          style={styles.dropdownHeader}
+          onPress={() => setExpandedHabits(!expandedHabits)}
+          activeOpacity={0.7}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={styles.dropdownTitle}>Habits to Track</Text>
+            <Text style={styles.rowSub}>Select which habits you want to log each day</Text>
+          </View>
+          <Text style={styles.dropdownArrow}>{expandedHabits ? '▼' : '▶'}</Text>
+        </TouchableOpacity>
+        {expandedHabits && (
+          <View style={{ marginTop: 12 }}>
+            {AVAILABLE_HABITS.map((habit) => {
+              const isSelected = trackedHabits.includes(habit.key);
+              return (
+                <TouchableOpacity
+                  key={habit.key}
+                  style={styles.habitRow}
+                  onPress={() => handleHabitToggle(habit.key)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.habitEmoji}>{habit.emoji}</Text>
+                  <Text style={styles.habitLabel}>{habit.label}</Text>
+                  <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
+                    {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
+      </View>
+
+      {/* Mood States */}
+      <View style={styles.card}>
+        <TouchableOpacity
+          style={styles.dropdownHeader}
+          onPress={() => setExpandedMoods(!expandedMoods)}
+          activeOpacity={0.7}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={styles.dropdownTitle}>Mood States</Text>
+            <Text style={styles.rowSub}>Positive and negative metrics to track</Text>
+          </View>
+          <Text style={styles.dropdownArrow}>{expandedMoods ? '▼' : '▶'}</Text>
+        </TouchableOpacity>
+        {expandedMoods && (
+          <View style={{ marginTop: 12 }}>
+            <Text style={styles.moodSectionLabel}>Positive</Text>
+            {POSITIVE_METRICS.map((metric) => (
+              <View key={metric.key} style={styles.habitRow}>
+                <View style={[styles.colorDot, { backgroundColor: metric.color }]} />
+                <Text style={styles.habitLabel}>{metric.label}</Text>
+              </View>
+            ))}
+            <Text style={[styles.moodSectionLabel, { marginTop: 12 }]}>Negative</Text>
+            {NEGATIVE_METRICS.map((metric) => (
+              <View key={metric.key} style={styles.habitRow}>
+                <View style={[styles.colorDot, { backgroundColor: metric.color }]} />
+                <Text style={styles.habitLabel}>{metric.label}</Text>
+              </View>
+            ))}
+          </View>
+        )}
       </View>
 
       {/* About */}
@@ -345,6 +391,37 @@ function makeStyles(c: ThemeColors) {
       color: '#fff',
       fontSize: 14,
       fontWeight: '700',
+    },
+    dropdownHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 4,
+    },
+    dropdownTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: c.textPrimary,
+      marginBottom: 4,
+    },
+    dropdownArrow: {
+      fontSize: 16,
+      color: c.textMuted,
+      marginLeft: 8,
+    },
+    moodSectionLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: c.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginBottom: 6,
+    },
+    colorDot: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      marginRight: 8,
     },
   });
 }
