@@ -243,7 +243,7 @@ export default function SettingsScreen() {
           activeOpacity={0.7}
         >
           <View style={{ flex: 1 }}>
-            <Text style={styles.dropdownTitle}>Mood States</Text>
+            <Text style={styles.dropdownTitle}>Emotional Metrics</Text>
             <Text style={styles.rowSub}>Positive and negative metrics to track</Text>
           </View>
           <Text style={styles.dropdownArrow}>{expandedMoods ? '▼' : '▶'}</Text>

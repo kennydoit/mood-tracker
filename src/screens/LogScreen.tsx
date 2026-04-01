@@ -185,8 +185,8 @@ export default function LogScreen() {
         {/* Mood States */}
         {trackedMoodStates.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Mood States</Text>
-            <Text style={styles.sectionSub}>1 = Not at all · 10 = Extremely</Text>
+            <Text style={styles.sectionTitle}>Emotional Metrics</Text>
+            <Text style={styles.sectionSub}>Intensity Scales: 1-10</Text>
             {[...POSITIVE_METRICS, ...NEGATIVE_METRICS]
               .filter((metric) => trackedMoodStates.includes(metric.key))
               .map((metric) => (
@@ -212,7 +212,7 @@ export default function LogScreen() {
                 <Text style={styles.habitScoreText}>{habitScore}%</Text>
               </View>
             </View>
-            <Text style={styles.sectionSub}>Build habits to improve well being</Text>
+            <Text style={styles.sectionSub}>Build routines that support your well‑being</Text>
             {AVAILABLE_HABITS.filter((h) => trackedHabits.includes(h.key)).map((habit) => {
               const checked = habits[habit.key] === true;
               return (
