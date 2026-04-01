@@ -8,6 +8,22 @@
 			"isBackground": true,
 			"problemMatcher": [],
 			"group": "build"
+		},
+		{
+			"label": "Start Expo (Tunnel + Clear Cache)",
+			"type": "shell",
+			"command": "\"C:\\Program Files\\nodejs\\node.exe\" node_modules\\expo\\bin\\cli start --tunnel --clear",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Start Expo (LAN)",
+			"type": "shell",
+			"command": "cmd /c start-expo-lan.cmd",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
 		}
 	]
 }
