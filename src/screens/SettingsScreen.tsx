@@ -226,6 +226,7 @@ export default function SettingsScreen() {
         </View>
       )}
 
+
       {/* Appearance */}
       <View style={styles.card}>
         <View style={styles.row}>
@@ -238,6 +239,24 @@ export default function SettingsScreen() {
           <Switch
             value={mode === 'dark'}
             onValueChange={(value) => setMode(value ? 'dark' : 'light')}
+            trackColor={{ false: '#ddd', true: '#5B7FFF' }}
+            thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
+          />
+        </View>
+      </View>
+
+      {/* Colorful Mode Toggle */}
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.rowTitle}>Colorful Mode</Text>
+            <Text style={styles.rowSub}>
+              {mode === 'colorful' ? 'Sections use pale highlight colors' : 'Sections use neutral backgrounds'}
+            </Text>
+          </View>
+          <Switch
+            value={mode === 'colorful'}
+            onValueChange={(value) => setMode(value ? 'colorful' : 'light')}
             trackColor={{ false: '#ddd', true: '#5B7FFF' }}
             thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
           />
@@ -303,6 +322,28 @@ export default function SettingsScreen() {
         )}
       </View>
 
+
+
+      {/* Habits Tracking Toggle */}
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.rowTitle}>Track Habits</Text>
+            <Text style={styles.rowSub}>
+              {appSettings.habitsEnabled
+                ? 'Habits will be included in your wellness score.'
+                : 'Habits are optional and not included in your wellness score.'}
+            </Text>
+          </View>
+          <Switch
+            value={appSettings.habitsEnabled}
+            onValueChange={handleHabitsEnabledToggle}
+            trackColor={{ false: '#ddd', true: '#5B7FFF' }}
+            thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
+          />
+        </View>
+      </View>
+
       {/* Habits to Track */}
       <View style={styles.card}>
         <TouchableOpacity
@@ -343,7 +384,7 @@ export default function SettingsScreen() {
       <View style={styles.card}>
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.rowTitle}>Wellness Label</Text>
+            <Text style={styles.rowTitle}>Use Wellness Labels</Text>
             <Text style={styles.rowSub}>
               {appSettings.wellnessLabelMode === 'default'
                 ? 'Default: Very Low, Low, Moderate, High, Very High'
@@ -359,25 +400,7 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      {/* Habits Tracking Toggle */}
-      <View style={styles.card}>
-        <View style={styles.row}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.rowTitle}>Track Habits</Text>
-            <Text style={styles.rowSub}>
-              {appSettings.habitsEnabled
-                ? 'Habits will be included in your wellness score.'
-                : 'Habits are optional and not included in your wellness score.'}
-            </Text>
-          </View>
-          <Switch
-            value={appSettings.habitsEnabled}
-            onValueChange={handleHabitsEnabledToggle}
-            trackColor={{ false: '#ddd', true: '#5B7FFF' }}
-            thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
-          />
-        </View>
-      </View>
+
 
       {/* About */}
       <View style={styles.card}>

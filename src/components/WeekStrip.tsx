@@ -51,8 +51,9 @@ export default function WeekStrip({
   entryDateKeys,
   onSelectDate,
 }: Props) {
-  const { colors } = useTheme();
-  const styles = makeStyles(colors);
+  const theme = useTheme();
+  const { colors, mode } = theme;
+    const styles = makeStyles(colors, mode);
   const days = buildDays();
   const listRef = useRef<FlatList>(null);
 
@@ -133,7 +134,7 @@ export default function WeekStrip({
   );
 }
 
-function makeStyles(c: ThemeColors) {
+function makeStyles(c: ThemeColors, mode?: string) {
   return StyleSheet.create({
     container: {
       backgroundColor: c.card,
@@ -177,7 +178,7 @@ function makeStyles(c: ThemeColors) {
       fontWeight: '700',
     },
     dayNumberSelected: {
-      color: '#fff',
+      color: mode === 'colorful' ? c.textSecondary : '#fff',
       fontWeight: '800',
     },
     dayLetter: {

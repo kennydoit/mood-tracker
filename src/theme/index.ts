@@ -1,7 +1,13 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+export const colorfulSectionFills = {
+  wellness: '#E6F7ED', // pale green
+  positive: '#E6F0FA', // pale blue
+  negative: '#FDEEEF', // pale red
+  habits: '#FFF8E1',   // pale yellow
+};
 
-export type ThemeMode = 'light' | 'dark';
+// colorfulColors must be defined after lightColors
+// colorfulColors must be defined after lightColors and darkColors
+// colorfulColors must be defined after lightColors and darkColors
 
 export interface ThemeColors {
   bg: string;
@@ -60,6 +66,7 @@ interface ThemeContextValue {
   setMode: (mode: ThemeMode) => void;
 }
 
+
 const ThemeContext = createContext<ThemeContextValue>({
   mode: 'light',
   colors: lightColors,
@@ -73,7 +80,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     AsyncStorage.getItem(THEME_KEY).then((saved) => {
-      if (saved === 'dark' || saved === 'light') setModeState(saved as ThemeMode);
+      if (saved === 'dark' || saved === 'light' || saved === 'colorful') setModeState(saved as ThemeMode);
     });
   }, []);
 
@@ -82,7 +89,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     await AsyncStorage.setItem(THEME_KEY, m);
   };
 
-  const colors = mode === 'dark' ? darkColors : lightColors;
+  let colors: ThemeColors;
+  if (mode === 'dark') {
+    colors = darkColors;
+  } else if (mode === 'colorful') {
+    colors = colorfulColors;
+  } else {
+    colors = lightColors;
+  }
 
   return React.createElement(
     ThemeContext.Provider,

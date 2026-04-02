@@ -25,6 +25,15 @@ import { loadTrackedMoodStates } from '../storage/moodStateSettings';
 import { toDateKey } from '../utils/dateUtils';
 import { calculateWellnessScore, calculateHabitScore, wellnessColor, wellnessLabel, supportiveWellnessLabel } from '../utils/wellness';
 import { useTheme, ThemeColors } from '../theme';
+// Utility to blend a color with white for a pale effect
+function paleColor(hex: string, amount = 0.85) {
+  // hex: #RRGGBB
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const blend = (c: number) => Math.round(c + (255 - c) * amount);
+  return `#${blend(r).toString(16).padStart(2, '0')}${blend(g).toString(16).padStart(2, '0')}${blend(b).toString(16).padStart(2, '0')}`;
+}
 import { LinearGradient } from 'expo-linear-gradient';
 import { loadAppSettings, AppSettings } from '../storage/settings';
 
@@ -43,8 +52,9 @@ function todayMidnight(): Date {
 }
 
 export default function LogScreen() {
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
   const isLightMode = colors.bg === '#fafafa';
+  const isColorful = mode === 'colorful';
   const styles = makeStyles(colors);
   const [selectedDate, setSelectedDate] = useState<Date>(todayMidnight());
   const [entryDateKeys, setEntryDateKeys] = useState<Set<string>>(new Set());
@@ -57,7 +67,7 @@ export default function LogScreen() {
   const [saving, setSaving] = useState(false);
   const [enteredMetrics, setEnteredMetrics] = useState<string[]>([]);
   const [habitsEntered, setHabitsEntered] = useState(false);
-  const [appSettings, setAppSettings] = useState<AppSettings>({ wellnessLabelMode: 'default' });
+  const [appSettings, setAppSettings] = useState<AppSettings>({ wellnessLabelMode: 'default', habitsEnabled: true });
 
   // Reload the dot-map, tracked habits, and mood states whenever the screen comes into focus
   useFocusEffect(
@@ -148,7 +158,9 @@ export default function LogScreen() {
     trackedMetricKeys,
     habitsTracked
   );
+
   const scoreColor = score === -1 ? '#ddd' : wellnessColor(score);
+  const sectionBg = isColorful ? paleColor(scoreColor, 0.85) : undefined;
   const scoreLabel = score === -1
     ? '—'
     : appSettings.wellnessLabelMode === 'supportive'
@@ -163,258 +175,129 @@ export default function LogScreen() {
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {isLightMode ? (
-        <LinearGradient
-          colors={['#d0d0d0', '#d0d0d0']}
-          style={{ flex: 1 }}
-        >
-          {/* Week strip — fixed above the scrollable content */}
-          <WeekStrip
-            selectedDateKey={toDateKey(selectedDate)}
-            entryDateKeys={entryDateKeys}
-            onSelectDate={handleSelectDate}
-          />
-          {/* Date heading — fixed below week strip */}
-          <View style={styles.fixedHeader}>
-            <View style={styles.dateHeading}>
-              <Text style={styles.dateHeadingText}>
-                {isToday ? 'Today' : format(selectedDate, 'EEEE, MMM d')}
-              </Text>
-              {isEditing && (
-                <View style={styles.editingBadge}>
-                  <Text style={styles.editingBadgeText}>Editing</Text>
-                </View>
+      <View style={{ flex: 1, backgroundColor: colors.bg }}>
+        {/* Week strip — fixed above the scrollable content */}
+        <WeekStrip
+          selectedDateKey={toDateKey(selectedDate)}
+          entryDateKeys={entryDateKeys}
+          onSelectDate={handleSelectDate}
+        />
+        {/* Date heading — fixed below week strip */}
+        <View style={styles.fixedHeader}>
+          <View style={styles.dateHeading}>
+            <Text style={styles.dateHeadingText}>
+              {isToday ? 'Today' : format(selectedDate, 'EEEE, MMM d')}
+            </Text>
+            {isEditing && (
+              <View style={styles.editingBadge}>
+                <Text style={styles.editingBadgeText}>Editing</Text>
+              </View>
+            )}
+          </View>
+          {/* Wellness Score banner — pinned under date */}
+          <View style={[styles.wellnessBanner, { borderColor: scoreColor }, isColorful && { backgroundColor: sectionBg }]}> 
+            <View style={styles.wellnessLeft}>
+              <Text style={styles.wellnessTitle}>Wellness Score</Text>
+              {score === -1 && (
+                <Text style={styles.wellnessSubtitle}>Start entering metrics to see your score</Text>
               )}
             </View>
-            {/* Wellness Score banner — pinned under date */}
-            <View style={[styles.wellnessBanner, { borderColor: scoreColor }]}>
-              <View style={styles.wellnessLeft}>
-                <Text style={styles.wellnessTitle}>Wellness Score</Text>
-                {score === -1 && (
-                  <Text style={styles.wellnessSubtitle}>Start entering metrics to see your score</Text>
-                )}
-              </View>
-              <View style={styles.wellnessRight}>
-                <Text style={[styles.wellnessScore, { color: scoreColor }]}>{score === -1 ? '—' : score}</Text>
-                <Text style={[styles.wellnessLabel, { color: scoreColor }]}>{scoreLabel}</Text>
-              </View>
+            <View style={styles.wellnessRight}>
+              <Text style={[styles.wellnessScore, { color: scoreColor }]}>{score === -1 ? '—' : score}</Text>
+              <Text style={[styles.wellnessLabel, { color: scoreColor }]}>{scoreLabel}</Text>
             </View>
           </View>
-          <ScrollView
-            style={styles.scroll}
-            contentContainerStyle={styles.content}
-            keyboardShouldPersistTaps="handled"
-          >
-            {/* Mood States */}
-            {trackedMoodStates.length > 0 && (
-              <View style={[styles.section, { borderColor: scoreColor }]}> 
-                <Text style={styles.sectionTitle}>Emotional Metrics</Text>
-                <Text style={styles.sectionSub}>Intensity Scales: 1-10</Text>
-                {[...POSITIVE_METRICS, ...NEGATIVE_METRICS]
-                  .filter((metric) => trackedMoodStates.includes(metric.key))
-                  .map((metric, index, filtered) => (
-                    <React.Fragment key={metric.key}>
-                      <MoodSlider
-                        label={metric.label}
-                        value={values[metric.key]}
-                        color={metric.color}
-                        onChange={(v) => setValue(metric.key, v)}
-                        startLabel={METRIC_LABELS[metric.key]?.start}
-                        endLabel={METRIC_LABELS[metric.key]?.end}
-                      />
-                      {index < filtered.length - 1 && <View style={styles.metricDivider} />}
-                    </React.Fragment>
-                  ))}
-              </View>
-            )}
-            {/* Habits */}
-            {habitsEnabled && trackedHabits.length > 0 && (
-              <View style={[styles.section, { borderColor: scoreColor }]}> 
-                <View style={styles.habitHeader}>
-                  <Text style={styles.sectionTitle}>Habits</Text>
-                  <View style={styles.habitScoreBadge}>
-                    <Text style={styles.habitScoreText}>{habitScore}%</Text>
-                  </View>
-                </View>
-                <Text style={styles.sectionSub}>Build routines that support your well‑being</Text>
-                {AVAILABLE_HABITS.filter((h) => trackedHabits.includes(h.key)).map((habit, index, filtered) => {
-                  const checked = habits[habit.key] === true;
-                  return (
-                    <React.Fragment key={habit.key}>
-                      <TouchableOpacity
-                        style={styles.habitRow}
-                        onPress={() => {
-                          setHabits((prev) => ({ ...prev, [habit.key]: !prev[habit.key] }));
-                          setHabitsEntered(true);
-                        }}
-                        activeOpacity={0.7}
-                      >
-                        <View style={[styles.habitCheckbox, checked && styles.habitCheckboxChecked]}>
-                          {checked && <Text style={styles.habitCheckmark}>✓</Text>}
-                        </View>
-                        <Text style={styles.habitEmoji}>{habit.emoji}</Text>
-                        <Text style={[styles.habitLabel, checked && styles.habitLabelChecked]}>
-                          {habit.label}
-                        </Text>
-                      </TouchableOpacity>
-                      {index < filtered.length - 1 && <View style={styles.habitDivider} />}
-                    </React.Fragment>
-                  );
-                })}
-              </View>
-            )}
-            {/* Notes */}
-            <View style={[styles.section, { borderColor: scoreColor }]}> 
-              <Text style={styles.sectionTitle}>Notes (optional)</Text>
-              <TextInput
-                style={styles.notesInput}
-                placeholder="How are you feeling? What's on your mind?"
-                placeholderTextColor="#bbb"
-                multiline
-                numberOfLines={4}
-                value={notes}
-                onChangeText={setNotes}
-                textAlignVertical="top"
-              />
-            </View>
-            {/* Save button */}
-            <TouchableOpacity
-              style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-              onPress={handleSave}
-              disabled={saving}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.saveText}>
-                {saving ? 'Saving…' : isEditing ? 'Update Entry' : 'Save Entry'}
-              </Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </LinearGradient>
-      ) : (
-        <View style={{ flex: 1, backgroundColor: colors.bg }}>
-          {/* Week strip — fixed above the scrollable content */}
-          <WeekStrip
-            selectedDateKey={toDateKey(selectedDate)}
-            entryDateKeys={entryDateKeys}
-            onSelectDate={handleSelectDate}
-          />
-          {/* Date heading — fixed below week strip */}
-          <View style={styles.fixedHeader}>
-            <View style={styles.dateHeading}>
-              <Text style={styles.dateHeadingText}>
-                {isToday ? 'Today' : format(selectedDate, 'EEEE, MMM d')}
-              </Text>
-              {isEditing && (
-                <View style={styles.editingBadge}>
-                  <Text style={styles.editingBadgeText}>Editing</Text>
-                </View>
-              )}
-            </View>
-            {/* Wellness Score banner — pinned under date */}
-            <View style={[styles.wellnessBanner, { borderColor: scoreColor }]}> 
-              <View style={styles.wellnessLeft}>
-                <Text style={styles.wellnessTitle}>Wellness Score</Text>
-                {score === -1 && (
-                  <Text style={styles.wellnessSubtitle}>Start entering metrics to see your score</Text>
-                )}
-              </View>
-              <View style={styles.wellnessRight}>
-                <Text style={[styles.wellnessScore, { color: scoreColor }]}>{score === -1 ? '—' : score}</Text>
-                <Text style={[styles.wellnessLabel, { color: scoreColor }]}>{scoreLabel}</Text>
-              </View>
-            </View>
-          </View>
-          <ScrollView
-            style={styles.scroll}
-            contentContainerStyle={styles.content}
-            keyboardShouldPersistTaps="handled"
-          >
-            {/* Mood States */}
-            {trackedMoodStates.length > 0 && (
-              <View style={[styles.section, { borderColor: scoreColor }]}> 
-                <Text style={styles.sectionTitle}>Emotional Metrics</Text>
-                <Text style={styles.sectionSub}>Intensity Scales: 1-10</Text>
-                {[...POSITIVE_METRICS, ...NEGATIVE_METRICS]
-                  .filter((metric) => trackedMoodStates.includes(metric.key))
-                  .map((metric, index, filtered) => (
-                    <React.Fragment key={metric.key}>
-                      <MoodSlider
-                        label={metric.label}
-                        value={values[metric.key]}
-                        color={metric.color}
-                        onChange={(v) => setValue(metric.key, v)}
-                        startLabel={METRIC_LABELS[metric.key]?.start}
-                        endLabel={METRIC_LABELS[metric.key]?.end}
-                      />
-                      {index < filtered.length - 1 && <View style={styles.metricDivider} />}
-                    </React.Fragment>
-                  ))}
-              </View>
-            )}
-            {/* Habits */}
-            {habitsEnabled && trackedHabits.length > 0 && (
-              <View style={[styles.section, { borderColor: scoreColor }]}> 
-                <View style={styles.habitHeader}>
-                  <Text style={styles.sectionTitle}>Habits</Text>
-                  <View style={styles.habitScoreBadge}>
-                    <Text style={styles.habitScoreText}>{habitScore}%</Text>
-                  </View>
-                </View>
-                <Text style={styles.sectionSub}>Build routines that support your well‑being</Text>
-                {AVAILABLE_HABITS.filter((h) => trackedHabits.includes(h.key)).map((habit, index, filtered) => {
-                  const checked = habits[habit.key] === true;
-                  return (
-                    <React.Fragment key={habit.key}>
-                      <TouchableOpacity
-                        style={styles.habitRow}
-                        onPress={() => {
-                          setHabits((prev) => ({ ...prev, [habit.key]: !prev[habit.key] }));
-                          setHabitsEntered(true);
-                        }}
-                        activeOpacity={0.7}
-                      >
-                        <View style={[styles.habitCheckbox, checked && styles.habitCheckboxChecked]}>
-                          {checked && <Text style={styles.habitCheckmark}>✓</Text>}
-                        </View>
-                        <Text style={styles.habitEmoji}>{habit.emoji}</Text>
-                        <Text style={[styles.habitLabel, checked && styles.habitLabelChecked]}>
-                          {habit.label}
-                        </Text>
-                      </TouchableOpacity>
-                      {index < filtered.length - 1 && <View style={styles.habitDivider} />}
-                    </React.Fragment>
-                  );
-                })}
-              </View>
-            )}
-            {/* Notes */}
-            <View style={[styles.section, { borderColor: scoreColor }]}> 
-              <Text style={styles.sectionTitle}>Notes (optional)</Text>
-              <TextInput
-                style={styles.notesInput}
-                placeholder="How are you feeling? What's on your mind?"
-                placeholderTextColor="#bbb"
-                multiline
-                numberOfLines={4}
-                value={notes}
-                onChangeText={setNotes}
-                textAlignVertical="top"
-              />
-            </View>
-            {/* Save button */}
-            <TouchableOpacity
-              style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-              onPress={handleSave}
-              disabled={saving}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.saveText}>
-                {saving ? 'Saving…' : isEditing ? 'Update Entry' : 'Save Entry'}
-              </Text>
-            </TouchableOpacity>
-          </ScrollView>
         </View>
-      )}
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Mood States */}
+          {trackedMoodStates.length > 0 && (
+            <View style={[styles.section, { borderColor: scoreColor }, isColorful && { backgroundColor: sectionBg }]}> 
+              <Text style={styles.sectionTitle}>Emotional Metrics</Text>
+              {/* Removed 'Intensity Scales: 1-10' as requested */}
+              {[...POSITIVE_METRICS, ...NEGATIVE_METRICS]
+                .filter((metric) => trackedMoodStates.includes(metric.key))
+                .map((metric, index, filtered) => (
+                  <React.Fragment key={metric.key}>
+                    <MoodSlider
+                      label={metric.label}
+                      value={values[metric.key]}
+                      color={metric.color}
+                      onChange={(v) => setValue(metric.key, v)}
+                      startLabel={METRIC_LABELS[metric.key]?.start}
+                      endLabel={METRIC_LABELS[metric.key]?.end}
+                    />
+                    {index < filtered.length - 1 && <View style={styles.metricDivider} />}
+                  </React.Fragment>
+                ))}
+            </View>
+          )}
+          {/* Habits */}
+          {habitsEnabled && trackedHabits.length > 0 && (
+            <View style={[styles.section, { borderColor: scoreColor }, isColorful && { backgroundColor: sectionBg }]}>
+              <View style={styles.habitHeader}>
+                <Text style={styles.sectionTitle}>Habits</Text>
+                <View style={styles.habitScoreBadge}>
+                  <Text style={styles.habitScoreText}>{habitScore}%</Text>
+                </View>
+              </View>
+              <Text style={styles.sectionSub}>Build routines that support your well‑being</Text>
+              {AVAILABLE_HABITS.filter((h) => trackedHabits.includes(h.key)).map((habit, index, filtered) => {
+                const checked = habits[habit.key] === true;
+                return (
+                  <React.Fragment key={habit.key}>
+                    <TouchableOpacity
+                      style={styles.habitRow}
+                      onPress={() => {
+                        setHabits((prev) => ({ ...prev, [habit.key]: !prev[habit.key] }));
+                        setHabitsEntered(true);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[styles.habitCheckbox, checked && styles.habitCheckboxChecked]}>
+                        {checked && <Text style={styles.habitCheckmark}>✓</Text>}
+                      </View>
+                      <Text style={styles.habitEmoji}>{habit.emoji}</Text>
+                      <Text style={[styles.habitLabel, checked && styles.habitLabelChecked]}>
+                        {habit.label}
+                      </Text>
+                    </TouchableOpacity>
+                    {index < filtered.length - 1 && <View style={styles.habitDivider} />}
+                  </React.Fragment>
+                );
+              })}
+            </View>
+          )}
+          {/* Notes */}
+          <View style={[styles.section, { borderColor: scoreColor }]}> 
+            <Text style={styles.sectionTitle}>Notes (optional)</Text>
+            <TextInput
+              style={styles.notesInput}
+              placeholder="How are you feeling? What's on your mind?"
+              placeholderTextColor="#bbb"
+              multiline
+              numberOfLines={4}
+              value={notes}
+              onChangeText={setNotes}
+              textAlignVertical="top"
+            />
+          </View>
+          {/* Save button */}
+          <TouchableOpacity
+            style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+            onPress={handleSave}
+            disabled={saving}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.saveText}>
+              {saving ? 'Saving…' : isEditing ? 'Update Entry' : 'Save Entry'}
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
     </KeyboardAvoidingView>
   );
 }
