@@ -16,39 +16,49 @@ export function calculateWellnessScore(
   values: Record<string, number>,
   habits?: Record<string, boolean>,
   enteredMetrics?: Set<string>,
+  trackedMetricKeys?: string[],
+  habitsTracked?: boolean
 ): number {
-  let total = 0;
-  let count = 0;
+  // Gather only tracked metrics that are entered
+  const trackedMetrics = trackedMetricKeys || [];
+  const enteredTrackedMetrics = trackedMetrics.filter((key) => enteredMetrics?.has(key));
+  const numMetrics = enteredTrackedMetrics.length;
+  const hasHabits = habitsTracked && enteredMetrics?.has('__habits_entered__') && habits && Object.keys(habits).length > 0;
 
-  // Count only explicitly entered positive metrics
-  for (const m of POSITIVE_METRICS) {
-    if (enteredMetrics?.has(m.key)) {
-      total += values[m.key];
-      count++;
+  // If nothing is entered, return -1
+  if (numMetrics === 0 && !hasHabits) return -1;
+
+  // Calculate metric contribution (average of entered metrics, 0-10)
+  let metricTotal = 0;
+  for (const key of enteredTrackedMetrics) {
+    if (POSITIVE_METRICS.some((m) => m.key === key)) {
+      metricTotal += values[key];
+    } else if (NEGATIVE_METRICS.some((m) => m.key === key)) {
+      metricTotal += 11 - values[key];
     }
   }
+  const metricAvg = numMetrics > 0 ? metricTotal / numMetrics : 0; // 0-10
+  const metricPoints = numMetrics > 0 ? (metricAvg / 10) * 75 : 0; // 0-75
 
-  // Count only explicitly entered negative metrics (inverted)
-  for (const m of NEGATIVE_METRICS) {
-    if (enteredMetrics?.has(m.key)) {
-      total += 11 - values[m.key];
-      count++;
-    }
+  // Calculate habits contribution (percentage checked, 0-1)
+  let habitsPoints = 0;
+  if (hasHabits) {
+    const trackedKeys = Object.keys(habits!);
+    const checked = trackedKeys.filter((k) => habits![k] === true).length;
+    const habitsPct = trackedKeys.length > 0 ? checked / trackedKeys.length : 0;
+    habitsPoints = habitsPct * 25; // 0-25
   }
 
-  // Count habits as a group if they've been explicitly entered and any are tracked
-  if (enteredMetrics?.has('__habits_entered__') && habits) {
-    const trackedKeys = Object.keys(habits);
-    if (trackedKeys.length > 0) {
-      const checked = trackedKeys.filter((k) => habits[k] === true).length;
-      total += (checked / trackedKeys.length) * 10;
-      count++;
-    }
+  // If both are present, sum to 100; if only one, max is 75 or 25
+  let score = 0;
+  if (numMetrics > 0 && hasHabits) {
+    score = metricPoints + habitsPoints;
+  } else if (numMetrics > 0) {
+    score = metricPoints;
+  } else if (hasHabits) {
+    score = habitsPoints;
   }
-
-  // Return -1 if no metrics entered, so no score is displayed
-  if (count === 0) return -1;
-  return Math.round((total / (count * 10)) * 100);
+  return Math.round(score);
 }
 
 /**
@@ -72,9 +82,18 @@ export function wellnessColor(score: number): string {
 
 /** Returns a short label that reflects the score level */
 export function wellnessLabel(score: number): string {
-  if (score >= 85) return 'Thriving';
-  if (score >= 70) return 'Good';
-  if (score >= 55) return 'Okay';
+  if (score >= 86) return 'Very High';
+  if (score >= 70) return 'High';
+  if (score >= 55) return 'Moderate';
   if (score >= 40) return 'Low';
-  return 'Struggling';
+  return 'Very Low';
+}
+
+/** Returns a supportive label that reflects the score level */
+export function supportiveWellnessLabel(score: number): string {
+  if (score >= 86) return 'Flourishing';
+  if (score >= 70) return 'Strong';
+  if (score >= 55) return 'Steady';
+  if (score >= 40) return 'Below Baseline';
+  return 'Needing Support';
 }

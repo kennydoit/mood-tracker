@@ -105,7 +105,7 @@ function makeStyles(c: ThemeColors) {
       marginTop: 3,
     },
     scaleLabel: {
-      fontSize: 10,
+      fontSize: 16,
       color: c.textMuted,
     },
   });

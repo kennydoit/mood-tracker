@@ -20,7 +20,10 @@ import {
 import { AVAILABLE_HABITS, POSITIVE_METRICS, NEGATIVE_METRICS } from '../constants/moods';
 import { loadTrackedHabits, saveTrackedHabits } from '../storage/habitSettings';
 import { loadTrackedMoodStates, saveTrackedMoodStates } from '../storage/moodStateSettings';
-import { useTheme, ThemeColors, ThemeMode } from '../theme';
+import { loadAppSettings, saveAppSettings, AppSettings } from '../storage/settings';
+import { useTheme } from '../theme';
+import type { ThemeColors } from '../theme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const MINUTES = [0, 15, 30, 45];
@@ -37,6 +40,7 @@ function formatTime(hour: number, minute: number) {
 
 export default function SettingsScreen() {
   const { colors, mode, setMode } = useTheme();
+  const isLightMode = colors.bg === '#fafafa';
   const styles = makeStyles(colors);
   const [settings, setSettings] = useState<ReminderSettings>({
     enabled: false,
@@ -47,12 +51,14 @@ export default function SettingsScreen() {
   const [expandedHabits, setExpandedHabits] = useState(false);
   const [expandedMoods, setExpandedMoods] = useState(false);
   const [trackedMoodStates, setTrackedMoodStates] = useState<string[]>([]);
+  const [appSettings, setAppSettings] = useState<AppSettings>({ wellnessLabelMode: 'default', habitsEnabled: false });
 
   useFocusEffect(
     useCallback(() => {
       loadReminderSettings().then(setSettings);
       loadTrackedHabits().then(setTrackedHabits);
       loadTrackedMoodStates().then(setTrackedMoodStates);
+      loadAppSettings().then(setAppSettings);
     }, []),
   );
 
@@ -65,7 +71,15 @@ export default function SettingsScreen() {
   };
 
   const handleMoodStateToggle = async (key: string) => {
-    const updated = trackedMoodStates.includes(key)
+    const isSelected = trackedMoodStates.includes(key);
+    if (isSelected && trackedMoodStates.length === 1) {
+      Alert.alert(
+        'At least one required',
+        'You must track at least one emotional metric.',
+      );
+      return;
+    }
+    const updated = isSelected
       ? trackedMoodStates.filter((k) => k !== key)
       : [...trackedMoodStates, key];
     setTrackedMoodStates(updated);
@@ -103,25 +117,56 @@ export default function SettingsScreen() {
     if (updated.enabled) await scheduleDailyReminder(updated);
   };
 
+  const handleWellnessLabelToggle = async (value: boolean) => {
+    const updated: AppSettings = { ...appSettings, wellnessLabelMode: value ? 'supportive' : 'default' };
+    setAppSettings(updated);
+    await saveAppSettings(updated);
+  };
+
+  const handleHabitsEnabledToggle = async (value: boolean) => {
+    const updated: AppSettings = { ...appSettings, habitsEnabled: value };
+    setAppSettings(updated);
+    await saveAppSettings(updated);
+  };
+
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
       {/* Reminder toggle */}
-      <View style={styles.card}>
-        <View style={styles.row}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.rowTitle}>Daily Reminder</Text>
-            <Text style={styles.rowSub}>
-              Get a notification to log your mood each day
-            </Text>
+      {isLightMode ? (
+        <LinearGradient colors={['#e0e0e0', '#f3f3f3']} style={styles.card}>
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowTitle}>Daily Reminder</Text>
+              <Text style={styles.rowSub}>
+                Get a notification to log your mood each day
+              </Text>
+            </View>
+            <Switch
+              value={settings.enabled}
+              onValueChange={handleToggle}
+              trackColor={{ false: '#ddd', true: '#5B7FFF' }}
+              thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
+            />
           </View>
-          <Switch
-            value={settings.enabled}
-            onValueChange={handleToggle}
-            trackColor={{ false: '#ddd', true: '#5B7FFF' }}
-            thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
-          />
+        </LinearGradient>
+      ) : (
+        <View style={styles.card}>
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowTitle}>Daily Reminder</Text>
+              <Text style={styles.rowSub}>
+                Get a notification to log your mood each day
+              </Text>
+            </View>
+            <Switch
+              value={settings.enabled}
+              onValueChange={handleToggle}
+              trackColor={{ false: '#ddd', true: '#5B7FFF' }}
+              thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
+            />
+          </View>
         </View>
-      </View>
+      )}
 
       {/* Time picker */}
       {settings.enabled && (
@@ -199,43 +244,7 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      {/* Habits to Track */}
-      <View style={styles.card}>
-        <TouchableOpacity
-          style={styles.dropdownHeader}
-          onPress={() => setExpandedHabits(!expandedHabits)}
-          activeOpacity={0.7}
-        >
-          <View style={{ flex: 1 }}>
-            <Text style={styles.dropdownTitle}>Habits to Track</Text>
-            <Text style={styles.rowSub}>Select which habits you want to log each day</Text>
-          </View>
-          <Text style={styles.dropdownArrow}>{expandedHabits ? '▼' : '▶'}</Text>
-        </TouchableOpacity>
-        {expandedHabits && (
-          <View style={{ marginTop: 12 }}>
-            {AVAILABLE_HABITS.map((habit) => {
-              const isSelected = trackedHabits.includes(habit.key);
-              return (
-                <TouchableOpacity
-                  key={habit.key}
-                  style={styles.habitRow}
-                  onPress={() => handleHabitToggle(habit.key)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.habitEmoji}>{habit.emoji}</Text>
-                  <Text style={styles.habitLabel}>{habit.label}</Text>
-                  <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
-                    {isSelected && <Text style={styles.checkmark}>✓</Text>}
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        )}
-      </View>
-
-      {/* Mood States */}
+      {/* Emotional Metrics to Track */}
       <View style={styles.card}>
         <TouchableOpacity
           style={styles.dropdownHeader}
@@ -243,7 +252,7 @@ export default function SettingsScreen() {
           activeOpacity={0.7}
         >
           <View style={{ flex: 1 }}>
-            <Text style={styles.dropdownTitle}>Emotional Metrics</Text>
+            <Text style={styles.dropdownTitle}>Emotional Metrics to Track</Text>
             <Text style={styles.rowSub}>Positive and negative metrics to track</Text>
           </View>
           <Text style={styles.dropdownArrow}>{expandedMoods ? '▼' : '▶'}</Text>
@@ -292,6 +301,82 @@ export default function SettingsScreen() {
             })}
           </View>
         )}
+      </View>
+
+      {/* Habits to Track */}
+      <View style={styles.card}>
+        <TouchableOpacity
+          style={styles.dropdownHeader}
+          onPress={() => setExpandedHabits(!expandedHabits)}
+          activeOpacity={0.7}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={styles.dropdownTitle}>Habits to Track</Text>
+            <Text style={styles.rowSub}>Select which habits you want to log each day</Text>
+          </View>
+          <Text style={styles.dropdownArrow}>{expandedHabits ? '▼' : '▶'}</Text>
+        </TouchableOpacity>
+        {expandedHabits && (
+          <View style={{ marginTop: 12 }}>
+            {AVAILABLE_HABITS.map((habit) => {
+              const isSelected = trackedHabits.includes(habit.key);
+              return (
+                <TouchableOpacity
+                  key={habit.key}
+                  style={styles.habitRow}
+                  onPress={() => handleHabitToggle(habit.key)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.habitEmoji}>{habit.emoji}</Text>
+                  <Text style={styles.habitLabel}>{habit.label}</Text>
+                  <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
+                    {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
+      </View>
+
+      {/* Wellness Label Mode Toggle */}
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.rowTitle}>Wellness Label</Text>
+            <Text style={styles.rowSub}>
+              {appSettings.wellnessLabelMode === 'default'
+                ? 'Default: Very Low, Low, Moderate, High, Very High'
+                : 'Supportive: Needing Support, Below Baseline, Steady, Strong, Flourishing'}
+            </Text>
+          </View>
+          <Switch
+            value={appSettings.wellnessLabelMode === 'supportive'}
+            onValueChange={handleWellnessLabelToggle}
+            trackColor={{ false: '#ddd', true: '#5B7FFF' }}
+            thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
+          />
+        </View>
+      </View>
+
+      {/* Habits Tracking Toggle */}
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.rowTitle}>Track Habits</Text>
+            <Text style={styles.rowSub}>
+              {appSettings.habitsEnabled
+                ? 'Habits will be included in your wellness score.'
+                : 'Habits are optional and not included in your wellness score.'}
+            </Text>
+          </View>
+          <Switch
+            value={appSettings.habitsEnabled}
+            onValueChange={handleHabitsEnabledToggle}
+            trackColor={{ false: '#ddd', true: '#5B7FFF' }}
+            thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
+          />
+        </View>
       </View>
 
       {/* About */}
