@@ -9,7 +9,7 @@ import {
 import { toDateKey } from '../utils/dateUtils';
 import { useTheme, ThemeColors } from '../theme';
 
-const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const DAY_LETTERS = ['Su', 'M', 'T', 'W', 'Th', 'F', 'Sa'];
 const ITEM_WIDTH = 44;
 const ITEM_MARGIN = 5;
 const DAYS_BACK = 89; // show 90 days total (today = index 89)
@@ -43,17 +43,20 @@ function buildDays(): DayItem[] {
 interface Props {
   selectedDateKey: string;
   entryDateKeys: Set<string>;
+  entryDotColors?: Record<string, string>;
   onSelectDate: (date: Date) => void;
+  liveSelectedDotColor?: string;
 }
-
-export default function WeekStrip({
+export function WeekStrip({
   selectedDateKey,
   entryDateKeys,
+  entryDotColors = {},
   onSelectDate,
+  liveSelectedDotColor,
 }: Props) {
   const theme = useTheme();
   const { colors, mode } = theme;
-    const styles = makeStyles(colors, mode);
+  const styles = makeStyles(colors, mode);
   const days = buildDays();
   const listRef = useRef<FlatList>(null);
 
@@ -68,6 +71,12 @@ export default function WeekStrip({
     const isSelected = item.dateKey === selectedDateKey;
     const hasEntry = entryDateKeys.has(item.dateKey);
 
+    // Use dynamic color if available
+    let dotColor = entryDotColors[item.dateKey] || '#ddd';
+    // If this is the selected date, use the live color if provided
+    if (item.dateKey === selectedDateKey && liveSelectedDotColor) {
+      dotColor = liveSelectedDotColor;
+    }
     return (
       <TouchableOpacity
         style={styles.dayWrapper}
@@ -104,7 +113,11 @@ export default function WeekStrip({
         <View style={styles.dotRow}>
           {hasEntry ? (
             <View
-              style={[styles.dot, isSelected && styles.dotSelected]}
+              style={[
+                styles.dot,
+                // Always use wellness color, never accent, even if selected
+                { backgroundColor: dotColor },
+              ]}
             />
           ) : (
             <View style={styles.dotPlaceholder} />
@@ -138,7 +151,7 @@ function makeStyles(c: ThemeColors, mode?: string) {
   return StyleSheet.create({
     container: {
       backgroundColor: c.card,
-      paddingVertical: 10,
+      paddingVertical: 10, // Restore to original, space is now below dot
       borderBottomWidth: 1,
       borderBottomColor: c.borderLight,
     },
@@ -178,7 +191,7 @@ function makeStyles(c: ThemeColors, mode?: string) {
       fontWeight: '700',
     },
     dayNumberSelected: {
-      color: mode === 'colorful' ? c.textSecondary : '#fff',
+      color: '#fff', // Always white for visibility on solid accent
       fontWeight: '800',
     },
     dayLetter: {
@@ -196,23 +209,21 @@ function makeStyles(c: ThemeColors, mode?: string) {
       fontWeight: '700',
     },
     dotRow: {
-      height: 6,
+      height: 16,
       marginTop: 2,
+      marginBottom: 8, // Add space below the dot to prevent truncation
       alignItems: 'center',
       justifyContent: 'center',
     },
     dot: {
-      width: 5,
-      height: 5,
-      borderRadius: 2.5,
-      backgroundColor: c.accent,
-    },
-    dotSelected: {
-      backgroundColor: c.accent,
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      // backgroundColor is set dynamically
     },
     dotPlaceholder: {
-      width: 5,
-      height: 5,
+      width: 10,
+      height: 10,
     },
   });
 }

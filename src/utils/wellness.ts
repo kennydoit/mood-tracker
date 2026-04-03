@@ -75,9 +75,43 @@ export function calculateHabitScore(
 
 /** Returns a colour that reflects the score level */
 export function wellnessColor(score: number): string {
-  if (score >= 75) return '#4CAF50'; // green
-  if (score >= 50) return '#FF9800'; // amber
-  return '#F44336';                  // red
+  // Clamp score to [0, 100]
+  const s = Math.max(0, Math.min(100, score));
+  // Define color stops
+  const stops = [
+    { score: 0, color: [255, 0, 0] },        // Red
+    { score: 25, color: [255, 140, 0] },    // Dark Orange (#FF8C00)
+    { score: 40, color: [255, 215, 0] },    // Gold (#FFD700)
+    { score: 60, color: [50, 205, 50] },    // Lime Green (#32CD32)
+    { score: 75, color: [30, 144, 255] },   // Dodger Blue (#1E90FF)
+    { score: 90, color: [75, 0, 130] },     // Indigo
+    { score: 100, color: [139, 0, 255] },   // Violet
+  ];
+
+  // Find the two stops s is between
+  let lower = stops[0];
+  let upper = stops[stops.length - 1];
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (s >= stops[i].score && s <= stops[i + 1].score) {
+      lower = stops[i];
+      upper = stops[i + 1];
+      break;
+    }
+  }
+  // Linear interpolation
+  const range = upper.score - lower.score;
+  const t = range === 0 ? 0 : (s - lower.score) / range;
+  const interp = (a: number, b: number) => Math.round(a + (b - a) * t);
+  const [r, g, b] = [
+    interp(lower.color[0], upper.color[0]),
+    interp(lower.color[1], upper.color[1]),
+    interp(lower.color[2], upper.color[2]),
+  ];
+  // Return as hex string
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b)
+    .toString(16)
+    .slice(1)
+    .toUpperCase()}`;
 }
 
 /** Returns a short label that reflects the score level */

@@ -1,3 +1,7 @@
+
+export type ThemeMode = 'light' | 'dark' | 'colorful';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 export const colorfulSectionFills = {
   wellness: '#E6F7ED', // pale green
   positive: '#E6F0FA', // pale blue
@@ -58,6 +62,14 @@ export const darkColors: ThemeColors = {
   accentBg: '#1C2340',
   inputBg: '#2C2C2E',
   shadow: 'transparent',
+};
+
+// colorfulColors must be defined after lightColors and darkColors
+export const colorfulColors: ThemeColors = {
+  ...lightColors,
+  card: '#fff',
+  cardAlt: '#f5f5f5',
+  // Other colors can be customized as needed
 };
 
 interface ThemeContextValue {

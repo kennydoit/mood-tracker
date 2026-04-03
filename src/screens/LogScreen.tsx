@@ -1,3 +1,5 @@
+// TEMP: For clearing all data
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
@@ -14,7 +16,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { POSITIVE_METRICS, NEGATIVE_METRICS, AVAILABLE_HABITS, METRIC_LABELS } from '../constants/moods';
 import MoodSlider from '../components/MoodSlider';
-import WeekStrip from '../components/WeekStrip';
+import { WeekStrip } from '../components/WeekStrip';
 import {
   loadEntryForDate,
   loadDateKeyMap,
@@ -36,6 +38,46 @@ function paleColor(hex: string, amount = 0.85) {
 }
 import { LinearGradient } from 'expo-linear-gradient';
 import { loadAppSettings, AppSettings } from '../storage/settings';
+import { MoodEntry } from '../types';
+
+/**
+ * Compute the wellness dot color for a saved entry using the same logic as the live score.
+ * Filters metrics/habits through the currently-tracked lists so saved and live colors always match.
+ */
+function computeEntryDotColor(
+  entry: MoodEntry,
+  trackedMoodStates: string[],
+  trackedHabits: string[],
+  habitsEnabled: boolean
+): string {
+  // Only include metric values that are currently tracked
+  const filteredValues = Object.fromEntries(
+    Object.entries(entry.values).filter(([k]) => trackedMoodStates.includes(k))
+  ) as Record<string, number>;
+  const enteredMetrics = new Set(Object.keys(filteredValues));
+
+  // Only include habits that are currently tracked
+  const habitsTracked = habitsEnabled && trackedHabits.length > 0;
+  let trackedHabitsRecord: Record<string, boolean> | undefined;
+  if (habitsTracked && entry.habits) {
+    trackedHabitsRecord = Object.fromEntries(
+      trackedHabits.map((k) => [k, entry.habits![k] ?? false])
+    );
+    // Only flag habits as entered if the entry has any habit data at all
+    if (Object.keys(entry.habits).length > 0) {
+      enteredMetrics.add('__habits_entered__');
+    }
+  }
+
+  const score = calculateWellnessScore(
+    filteredValues,
+    trackedHabitsRecord,
+    enteredMetrics,
+    trackedMoodStates,
+    habitsTracked
+  );
+  return score === -1 ? '#ddd' : wellnessColor(score);
+}
 
 const defaultValues = (): Record<string, number | undefined> => {
   const vals: Record<string, number | undefined> = {};
@@ -68,6 +110,8 @@ export default function LogScreen() {
   const [enteredMetrics, setEnteredMetrics] = useState<string[]>([]);
   const [habitsEntered, setHabitsEntered] = useState(false);
   const [appSettings, setAppSettings] = useState<AppSettings>({ wellnessLabelMode: 'default', habitsEnabled: true });
+  // Used to force dot color recomputation after entry update
+  const [dotColorRefreshKey, setDotColorRefreshKey] = useState(0);
 
   // Reload the dot-map, tracked habits, and mood states whenever the screen comes into focus
   useFocusEffect(
@@ -115,7 +159,23 @@ export default function LogScreen() {
   };
 
   const handleSelectDate = (date: Date) => {
+    // Reset form immediately so the live score drops to -1 before the entry loads.
+    // This prevents the previous day's score colour bleeding onto the new dot.
+    setValues(defaultValues());
+    setNotes('');
+    setHabits({});
+    setExistingEntryId(null);
+    setEnteredMetrics([]);
+    setHabitsEntered(false);
     setSelectedDate(date);
+    // Recompute dot colors so previous selected day reverts to saved color
+    loadDateKeyMap().then((map) => {
+      const colors: { [key: string]: string } = {};
+      Object.entries(map).forEach(([dateKey, entry]) => {
+        colors[dateKey] = computeEntryDotColor(entry, trackedMoodStates, trackedHabits, habitsEnabled);
+      });
+      setEntryDotColors(colors);
+    });
   };
 
   const handleSave = async () => {
@@ -129,6 +189,20 @@ export default function LogScreen() {
       // Refresh dot map
       const map = await loadDateKeyMap();
       setEntryDateKeys(new Set(Object.keys(map)));
+      // Immediately update the dot color for the selected date
+      setEntryDotColors((prev) => {
+        const newColors = { ...prev };
+        const savedEntry: MoodEntry = {
+          id: existingEntryId ?? '',
+          date: toDateKey(selectedDate),
+          values: definedValues,
+          habits,
+        };
+        newColors[toDateKey(selectedDate)] = computeEntryDotColor(savedEntry, trackedMoodStates, trackedHabits, habitsEnabled);
+        return newColors;
+      });
+      // Force dot color recomputation for other dates if needed
+      setDotColorRefreshKey((k) => k + 1);
       Alert.alert('Saved!', 'Your mood has been logged.', [{ text: 'OK' }]);
     } catch {
       Alert.alert('Error', 'Could not save entry. Please try again.');
@@ -170,17 +244,55 @@ export default function LogScreen() {
   const isToday = toDateKey(selectedDate) === toDateKey(new Date());
   const isEditing = !!existingEntryId;
 
+  // Build a map of dateKey -> wellness color for all days with entries
+  const [entryDotColors, setEntryDotColors] = useState<{ [key: string]: string }>({});
+  useEffect(() => {
+    async function computeDotColors() {
+      const map = await loadDateKeyMap();
+      const colors: { [key: string]: string } = {};
+      Object.entries(map).forEach(([dateKey, entry]) => {
+        colors[dateKey] = computeEntryDotColor(entry, trackedMoodStates, trackedHabits, habitsEnabled);
+      });
+      setEntryDotColors(colors);
+    }
+    computeDotColors();
+  }, [entryDateKeys, trackedMoodStates, trackedHabits, habitsEnabled, dotColorRefreshKey]);
+
+  // TEMP: Handler to clear all data
+  const handleClearAllData = async () => {
+    try {
+      await AsyncStorage.clear();
+      setEntryDotColors({}); // Reset dot colors in memory
+      setEntryDateKeys(new Set()); // Reset entry keys in memory
+      Alert.alert('All data cleared', 'The app will now reload.');
+      // Optionally reload the app (works in Expo)
+      if (typeof window !== 'undefined' && window.location) {
+        window.location.reload();
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Failed to clear data.');
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={{ flex: 1, backgroundColor: colors.bg }}>
+        {/* TEMP: Remove this button after use! */}
+        <View style={{ padding: 16 }}>
+          <TouchableOpacity onPress={handleClearAllData} style={{ backgroundColor: '#e74c3c', padding: 12, borderRadius: 8 }}>
+            <Text style={{ color: '#fff', textAlign: 'center', fontWeight: 'bold' }}>Clear ALL Data (Danger)</Text>
+          </TouchableOpacity>
+        </View>
         {/* Week strip — fixed above the scrollable content */}
         <WeekStrip
           selectedDateKey={toDateKey(selectedDate)}
           entryDateKeys={entryDateKeys}
+          entryDotColors={entryDotColors}
           onSelectDate={handleSelectDate}
+          liveSelectedDotColor={score === -1 ? undefined : wellnessColor(score)}
         />
         {/* Date heading — fixed below week strip */}
         <View style={styles.fixedHeader}>
@@ -188,13 +300,10 @@ export default function LogScreen() {
             <Text style={styles.dateHeadingText}>
               {isToday ? 'Today' : format(selectedDate, 'EEEE, MMM d')}
             </Text>
-            {isEditing && (
-              <View style={styles.editingBadge}>
-                <Text style={styles.editingBadgeText}>Editing</Text>
-              </View>
-            )}
           </View>
-          {/* Wellness Score banner — pinned under date */}
+        </View>
+        {/* Wellness Score banner — pinned under date */}
+        <View style={{paddingHorizontal: 16}}>
           <View style={[styles.wellnessBanner, { borderColor: scoreColor }, isColorful && { backgroundColor: sectionBg }]}> 
             <View style={styles.wellnessLeft}>
               <Text style={styles.wellnessTitle}>Wellness Score</Text>
