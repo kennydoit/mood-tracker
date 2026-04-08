@@ -14,20 +14,67 @@ import { POSITIVE_METRICS, NEGATIVE_METRICS } from '../constants/moods';
  */
 export function calculateWellnessScore(
   values: Record<string, number>,
-  habits?: Record<string, boolean>,
+  habits?: Record<string, boolean | 'intent'>,
   enteredMetrics?: Set<string>,
   trackedMetricKeys?: string[],
-  habitsTracked?: boolean
+  habitsTracked?: boolean,
+  emotionalMetricScoring?: 'default' | 's-curve'
 ): number {
   // Gather only tracked metrics that are entered
   const trackedMetrics = trackedMetricKeys || [];
   const enteredTrackedMetrics = trackedMetrics.filter((key) => enteredMetrics?.has(key));
   const numMetrics = enteredTrackedMetrics.length;
-  const hasHabits = habitsTracked && enteredMetrics?.has('__habits_entered__') && habits && Object.keys(habits).length > 0;
+  // Check if any habits are actually checked (not just if keys exist)
+  const actuallyCheckedHabits = habits && Object.keys(habits).some(k => habits[k] === true || habits[k] === 'intent');
+  const hasHabits = habitsTracked && enteredMetrics?.has('__habits_entered__') && actuallyCheckedHabits;
 
   // If nothing is entered, return -1
   if (numMetrics === 0 && !hasHabits) return -1;
 
+  // S-curve scoring
+  if (emotionalMetricScoring === 's-curve') {
+    // S = 100 / (1 + exp(-k (x - x_0)))
+    const k = 0.05;
+    const m = numMetrics;
+    const x_0 = m * 5;
+    let x = 0;
+    for (const key of enteredTrackedMetrics) {
+      if (POSITIVE_METRICS.some((m) => m.key === key)) {
+        x += values[key];
+      } else if (NEGATIVE_METRICS.some((m) => m.key === key)) {
+        x += 11 - values[key];
+      }
+    }
+    // Determine number of tracked habits (independent of whether any are checked)
+    const numTrackedHabits = habits ? Object.keys(habits).length : 0;
+    const maxHabitBonus = numTrackedHabits > 0 ? (100 / (numTrackedHabits + 1)) : 0;
+    
+    // Calculate actual habit bonus based on how many are checked
+    let habitBonus = 0;
+    if (numTrackedHabits > 0 && habits) {
+      const checked = Object.keys(habits).reduce((sum, k) => {
+        const v = habits![k];
+        if (v === true) return sum + 1;
+        if (v === 'intent') return sum + 0.5;
+        return sum;
+      }, 0);
+      habitBonus = maxHabitBonus * (checked / numTrackedHabits);
+    }
+    
+    // Calculate S-curve, including habitBonus in x for consistency
+    const S = 100 / (1 + Math.exp(-k * (x + habitBonus - x_0)));
+    // Calculate maximum possible S
+    // For max: all metrics = 10, all habits checked
+    // x_0 is always based on number of metrics (m), not habits
+    const x_max = m * 10 + maxHabitBonus;
+    const x0_max = m * 5;
+    const S_max = 100 / (1 + Math.exp(-k * (x_max - x0_max)));
+    const intercept = 100 - S_max;
+    // Add intercept to normalize, cap at 100
+    return Math.round(Math.min(S + intercept, 100));
+  }
+
+  // Default (linear) scoring logic
   // Calculate metric contribution (average of entered metrics, 0-10)
   let metricTotal = 0;
   for (const key of enteredTrackedMetrics) {
@@ -38,39 +85,40 @@ export function calculateWellnessScore(
     }
   }
   const metricAvg = numMetrics > 0 ? metricTotal / numMetrics : 0; // 0-10
-  const metricPoints = numMetrics > 0 ? (metricAvg / 10) * 75 : 0; // 0-75
-
-  // Calculate habits contribution (percentage checked, 0-1)
-  let habitsPoints = 0;
+  let metricPoints = (metricAvg / 10) * 100;
+  let habitBonus = 0;
   if (hasHabits) {
     const trackedKeys = Object.keys(habits!);
-    const checked = trackedKeys.filter((k) => habits![k] === true).length;
-    const habitsPct = trackedKeys.length > 0 ? checked / trackedKeys.length : 0;
-    habitsPoints = habitsPct * 25; // 0-25
+    const checked = trackedKeys.reduce((sum, k) => {
+      const v = habits![k];
+      if (v === true) return sum + 1;
+      if (v === 'intent') return sum + 0.5;
+      return sum;
+    }, 0);
+    if (trackedKeys.length > 0) {
+      habitBonus = (100 / (trackedKeys.length + 1)) * (checked / trackedKeys.length);
+    }
   }
-
-  // If both are present, sum to 100; if only one, max is 75 or 25
-  let score = 0;
-  if (numMetrics > 0 && hasHabits) {
-    score = metricPoints + habitsPoints;
-  } else if (numMetrics > 0) {
-    score = metricPoints;
-  } else if (hasHabits) {
-    score = habitsPoints;
-  }
-  return Math.round(score);
+  // Additive: metricPoints + habitBonus, cap at 100
+  let score = metricPoints + habitBonus;
+  return Math.round(Math.min(score, 100));
 }
 
 /**
  * Calculates a Habit Score (0–100) = percentage of tracked habits checked off.
  */
 export function calculateHabitScore(
-  habits: Record<string, boolean>,
+  habits: Record<string, boolean | 'intent'>,
   trackedKeys: string[],
 ): number {
   if (trackedKeys.length === 0) return 0;
-  const checked = trackedKeys.filter((k) => habits[k] === true).length;
-  return Math.round((checked / trackedKeys.length) * 100);
+  const score = trackedKeys.reduce((sum, k) => {
+    const v = habits[k];
+    if (v === true) return sum + 1;
+    if (v === 'intent') return sum + 0.5;
+    return sum;
+  }, 0);
+  return Math.round((score / trackedKeys.length) * 100);
 }
 
 /** Returns a colour that reflects the score level */

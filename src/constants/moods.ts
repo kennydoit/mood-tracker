@@ -19,9 +19,9 @@ export const NEGATIVE_METRICS: MoodMetric[] = [
 export const ALL_METRICS = [...POSITIVE_METRICS, ...NEGATIVE_METRICS];
 
 export const SCALE_LABELS: Record<number, string> = {
-  1: 'Not at all',
+  1: 'No sadness',
   5: 'Moderate',
-  10: 'Extremely',
+  10: 'Complete Sadness',
 };
 
 export const METRIC_LABELS: Record<string, { start: string; end: string }> = {
@@ -31,7 +31,7 @@ export const METRIC_LABELS: Record<string, { start: string; end: string }> = {
   energy: { start: 'Out of Battery', end: 'Energized' },
   sleep: { start: 'Low Quality', end: 'Fully Rested' },
   depression: { start: 'Clear Skies', end: 'Heavy Clouds' },
-  sadness: { start: 'Not at all', end: 'Extremely' },
+  sadness: { start: 'No sadness', end: 'Complete Sadness' },
   anxiety: { start: 'At Ease', end: 'On Edge' },
   nervousness: { start: 'Comfortable', end: 'Tense' },
   irritability: { start: 'Unbothered', end: 'Triggered' },

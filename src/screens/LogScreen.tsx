@@ -58,7 +58,7 @@ function computeEntryDotColor(
 
   // Only include habits that are currently tracked
   const habitsTracked = habitsEnabled && trackedHabits.length > 0;
-  let trackedHabitsRecord: Record<string, boolean> | undefined;
+  let trackedHabitsRecord: Record<string, boolean | 'intent'> | undefined;
   if (habitsTracked && entry.habits) {
     trackedHabitsRecord = Object.fromEntries(
       trackedHabits.map((k) => [k, entry.habits![k] ?? false])
@@ -102,14 +102,14 @@ export default function LogScreen() {
   const [entryDateKeys, setEntryDateKeys] = useState<Set<string>>(new Set());
   const [values, setValues] = useState<Record<string, number | undefined>>(defaultValues());
   const [notes, setNotes] = useState('');
-  const [habits, setHabits] = useState<Record<string, boolean>>({});
+  const [habits, setHabits] = useState<Record<string, boolean | 'intent'>>({})
   const [trackedHabits, setTrackedHabits] = useState<string[]>([]);
   const [trackedMoodStates, setTrackedMoodStates] = useState<string[]>([]);
   const [existingEntryId, setExistingEntryId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [enteredMetrics, setEnteredMetrics] = useState<string[]>([]);
   const [habitsEntered, setHabitsEntered] = useState(false);
-  const [appSettings, setAppSettings] = useState<AppSettings>({ wellnessLabelMode: 'default', habitsEnabled: true });
+  const [appSettings, setAppSettings] = useState<AppSettings>({ wellnessLabelMode: 'default', habitsEnabled: true, habitScoringMethod: 'standard' });
   // Used to force dot color recomputation after entry update
   const [dotColorRefreshKey, setDotColorRefreshKey] = useState(0);
 
@@ -139,7 +139,7 @@ export default function LogScreen() {
         setValues(defaultValues());
         setNotes('');
         setExistingEntryId(null);
-        setHabits({});
+        setHabits({} as Record<string, boolean | 'intent'>);
         // When starting fresh, no metrics are entered yet
         setEnteredMetrics([]);
         setHabitsEntered(false);
@@ -163,7 +163,7 @@ export default function LogScreen() {
     // This prevents the previous day's score colour bleeding onto the new dot.
     setValues(defaultValues());
     setNotes('');
-    setHabits({});
+    setHabits({} as Record<string, boolean | 'intent'>);
     setExistingEntryId(null);
     setEnteredMetrics([]);
     setHabitsEntered(false);
@@ -213,7 +213,7 @@ export default function LogScreen() {
 
   const habitsEnabled = appSettings.habitsEnabled !== false;
   // Only pass the habits that are actually tracked
-  const trackedHabitsRecord = habitsEnabled && trackedHabits.length > 0
+  const trackedHabitsRecord: Record<string, boolean | 'intent'> | undefined = habitsEnabled && trackedHabits.length > 0
     ? Object.fromEntries(trackedHabits.map((k) => [k, habits[k] ?? false]))
     : undefined;
   const enteredMetricsSet = new Set(enteredMetrics);
@@ -230,7 +230,8 @@ export default function LogScreen() {
     trackedHabitsRecord,
     enteredMetricsSet,
     trackedMetricKeys,
-    habitsTracked
+    habitsTracked,
+    appSettings.emotionalMetricScoring
   );
 
   const scoreColor = score === -1 ? '#ddd' : wellnessColor(score);
@@ -241,6 +242,8 @@ export default function LogScreen() {
       ? supportiveWellnessLabel(score)
       : wellnessLabel(score);
   const habitScore = calculateHabitScore(habits, trackedHabits);
+  const habitScoreColor = habitScore === 0 ? '#ddd' : wellnessColor(habitScore);
+  const habitScoreLabel = habitScore === 0 ? '—' : wellnessLabel(habitScore);
   const isToday = toDateKey(selectedDate) === toDateKey(new Date());
   const isEditing = !!existingEntryId;
 
@@ -349,28 +352,45 @@ export default function LogScreen() {
             <View style={[styles.section, { borderColor: scoreColor }, isColorful && { backgroundColor: sectionBg }]}>
               <View style={styles.habitHeader}>
                 <Text style={styles.sectionTitle}>Habits</Text>
-                <View style={styles.habitScoreBadge}>
-                  <Text style={styles.habitScoreText}>{habitScore}%</Text>
-                </View>
+                {/* Removed habit score display as requested */}
               </View>
               <Text style={styles.sectionSub}>Build routines that support your well‑being</Text>
               {AVAILABLE_HABITS.filter((h) => trackedHabits.includes(h.key)).map((habit, index, filtered) => {
-                const checked = habits[habit.key] === true;
+                const habitValue = habits[habit.key];
+                const isChecked = habitValue === true;
+                const isIntent = habitValue === 'intent';
+                const useIntentMode = appSettings.habitScoringMethod === 'intent';
                 return (
                   <React.Fragment key={habit.key}>
                     <TouchableOpacity
                       style={styles.habitRow}
                       onPress={() => {
-                        setHabits((prev) => ({ ...prev, [habit.key]: !prev[habit.key] }));
-                        setHabitsEntered(true);
+                        const cur = habits[habit.key];
+                        let next: boolean | 'intent';
+                        if (useIntentMode) {
+                          // Tri-state: unchecked → intent → checked → unchecked
+                          if (!cur) next = 'intent';
+                          else if (cur === 'intent') next = true;
+                          else next = false;
+                        } else {
+                          next = !cur;
+                        }
+                        const newHabits = { ...habits, [habit.key]: next };
+                        const anyHabitChecked = Object.values(newHabits).some(v => v === true || v === 'intent');
+                        setHabits(newHabits);
+                        setHabitsEntered(anyHabitChecked);
                       }}
                       activeOpacity={0.7}
                     >
-                      <View style={[styles.habitCheckbox, checked && styles.habitCheckboxChecked]}>
-                        {checked && <Text style={styles.habitCheckmark}>✓</Text>}
+                      <View style={[
+                        styles.habitCheckbox,
+                        isIntent && styles.habitCheckboxIntent,
+                        isChecked && styles.habitCheckboxChecked,
+                      ]}>
+                        {isChecked && <Text style={styles.habitCheckmark}>✓</Text>}
                       </View>
                       <Text style={styles.habitEmoji}>{habit.emoji}</Text>
-                      <Text style={[styles.habitLabel, checked && styles.habitLabelChecked]}>
+                      <Text style={[styles.habitLabel, isChecked && styles.habitLabelChecked, isIntent && styles.habitLabelIntent]}>
                         {habit.label}
                       </Text>
                     </TouchableOpacity>
@@ -573,6 +593,10 @@ function makeStyles(c: ThemeColors) {
       backgroundColor: c.accent,
       borderColor: c.accent,
     },
+    habitCheckboxIntent: {
+      backgroundColor: '#999',
+      borderColor: '#999',
+    },
     habitCheckmark: {
       color: '#fff',
       fontSize: 14,
@@ -590,6 +614,10 @@ function makeStyles(c: ThemeColors) {
     habitLabelChecked: {
       color: c.accent,
       fontWeight: '700',
+    },
+    habitLabelIntent: {
+      color: '#999',
+      fontWeight: '600',
     },
     saveButton: {
       backgroundColor: c.accent,
@@ -612,6 +640,30 @@ function makeStyles(c: ThemeColors) {
     },
     scaleLabel: {
       fontSize: 16,
+      fontWeight: '700',
+    },
+    habitScorePanel: {
+      flexDirection: 'column',
+      alignItems: 'center',
+      marginLeft: 10,
+      alignSelf: 'center',
+      minWidth: 56,
+    },
+    habitScoreNumber: {
+      fontSize: 28,
+      fontWeight: '700',
+      textAlign: 'center',
+      marginBottom: 0,
+    },
+    habitScoreLabel: {
+      fontSize: 13,
+      fontWeight: '600',
+      textAlign: 'center',
+      marginTop: -2,
+      opacity: 0.85,
+    },
+    valueText: {
+      fontSize: 18,
       fontWeight: '700',
     },
   });

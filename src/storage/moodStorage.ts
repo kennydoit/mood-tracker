@@ -82,7 +82,7 @@ export async function saveEntryForDate(
   date: Date,
   values: Record<string, number>,
   notes?: string,
-  habits?: Record<string, boolean>,
+  habits?: Record<string, boolean | 'intent'>,
 ): Promise<void> {
   const key = toDateKey(date);
   const entries = await loadEntries();

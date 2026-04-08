@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../theme';
 
 import LogScreen from '../screens/LogScreen';
@@ -18,11 +18,11 @@ export type RootTabParamList = {
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
-const icons: Record<string, string> = {
-  Log: '📝',
-  History: '📋',
-  Trends: '📈',
-  Settings: '⚙️',
+const iconMap: Record<string, { focused: string; unfocused: string }> = {
+  Log: { focused: 'heart', unfocused: 'heart-outline' },
+  History: { focused: 'book', unfocused: 'book-outline' },
+  Trends: { focused: 'trending-up', unfocused: 'trending-up' },
+  Settings: { focused: 'settings', unfocused: 'settings-outline' },
 };
 
 export default function AppNavigator() {
@@ -35,11 +35,10 @@ export default function AppNavigator() {
     <NavigationContainer theme={navTheme}>
       <Tab.Navigator
         screenOptions={({ route }) => ({
-          tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: focused ? 22 : 19, opacity: focused ? 1 : 0.7 }}>
-              {icons[route.name]}
-            </Text>
-          ),
+          tabBarIcon: ({ focused, color }) => {
+            const iconName = iconMap[route.name][focused ? 'focused' : 'unfocused'];
+            return <Ionicons name={iconName} size={focused ? 28 : 24} color={color} />;
+          },
           tabBarActiveTintColor: colors.accent,
           tabBarInactiveTintColor: colors.textMuted,
           tabBarStyle: {

@@ -18,5 +18,5 @@ export interface MoodEntry {
   date: string; // ISO string
   values: Record<string, number>; // metric key -> 1–10
   notes?: string;
-  habits?: Record<string, boolean>; // habit key -> checked
+  habits?: Record<string, boolean | 'intent'>; // habit key -> checked state
 }

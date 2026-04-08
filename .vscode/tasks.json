@@ -12,7 +12,7 @@
 		{
 			"label": "Start Expo (Tunnel + Clear Cache)",
 			"type": "shell",
-			"command": "\"C:\\Program Files\\nodejs\\node.exe\" node_modules\\expo\\bin\\cli start --tunnel --clear",
+			"command": "\"C:\\Program Files\\nodejs\\node.exe\" node_modules\\expo\\bin\\cli start --tunnel --port 8081 --clear",
 			"isBackground": true,
 			"problemMatcher": [],
 			"group": "build"

@@ -5,11 +5,15 @@ const SETTINGS_KEY = '@mood_tracker_settings';
 export interface AppSettings {
   wellnessLabelMode: 'default' | 'supportive';
   habitsEnabled: boolean;
+  habitScoringMethod: 'standard' | 'intent';
+  emotionalMetricScoring?: 'default' | 's-curve';
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
   wellnessLabelMode: 'default',
   habitsEnabled: true,
+  habitScoringMethod: 'standard',
+  emotionalMetricScoring: 'default',
 };
 
 export async function loadAppSettings(): Promise<AppSettings> {

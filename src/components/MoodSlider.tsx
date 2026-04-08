@@ -19,11 +19,15 @@ interface Props {
 export default function MoodSlider({ label, value, color, onChange, startLabel = 'Not at all', endLabel = 'Extremely' }: Props) {
   const { colors } = useTheme();
   const styles = makeStyles(colors);
+  // Override labels for Sadness
+  const isSadness = label === 'Sadness';
+  const displayStartLabel = isSadness ? 'No sadness' : startLabel;
+  const displayEndLabel = isSadness ? 'Complete Sadness' : endLabel;
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.label}>{label}</Text>
-        {value !== undefined && <Text style={[styles.valueText, { color }]}>{value}</Text>}
+        {/* Removed value number for wellness metrics as requested */}
       </View>
       <View style={styles.buttonRow}>
         {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
@@ -46,8 +50,8 @@ export default function MoodSlider({ label, value, color, onChange, startLabel =
         })}
       </View>
       <View style={styles.scaleLabels}>
-        <Text style={styles.scaleLabel}>{startLabel}</Text>
-        <Text style={styles.scaleLabel}>{endLabel}</Text>
+        <Text style={styles.scaleLabel}>{displayStartLabel}</Text>
+        <Text style={styles.scaleLabel}>{displayEndLabel}</Text>
       </View>
     </View>
   );

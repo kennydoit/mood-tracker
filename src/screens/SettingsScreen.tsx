@@ -1,3 +1,4 @@
+// Imports remain as originally intended, remove misplaced JSX and duplicate imports
 import React, { useCallback, useState } from 'react';
 import {
   View,
@@ -51,10 +52,12 @@ export default function SettingsScreen() {
   const [expandedHabits, setExpandedHabits] = useState(false);
   const [expandedMoods, setExpandedMoods] = useState(false);
   const [trackedMoodStates, setTrackedMoodStates] = useState<string[]>([]);
-  const [appSettings, setAppSettings] = useState<AppSettings>({ wellnessLabelMode: 'default', habitsEnabled: false });
+  const [appSettings, setAppSettings] = useState<AppSettings>({ wellnessLabelMode: 'default', habitsEnabled: false, habitScoringMethod: 'standard', emotionalMetricScoring: 'default' });
 
   useFocusEffect(
     useCallback(() => {
+      setExpandedHabits(false); // Collapse 'Habits to Track' on focus
+      setExpandedMoods(false); // Collapse 'Emotional Metrics to Track' on focus
       loadReminderSettings().then(setSettings);
       loadTrackedHabits().then(setTrackedHabits);
       loadTrackedMoodStates().then(setTrackedMoodStates);
@@ -129,44 +132,55 @@ export default function SettingsScreen() {
     await saveAppSettings(updated);
   };
 
+  const handleHabitScoringMethodToggle = async (value: boolean) => {
+    const updated: AppSettings = { ...appSettings, habitScoringMethod: value ? 'intent' : 'standard' };
+    setAppSettings(updated);
+    await saveAppSettings(updated);
+  };
+
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
       {/* Reminder toggle */}
-      {isLightMode ? (
-        <LinearGradient colors={['#e0e0e0', '#f3f3f3']} style={styles.card}>
-          <View style={styles.row}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.rowTitle}>Daily Reminder</Text>
-              <Text style={styles.rowSub}>
-                Get a notification to log your mood each day
-              </Text>
-            </View>
-            <Switch
-              value={settings.enabled}
-              onValueChange={handleToggle}
-              trackColor={{ false: '#ddd', true: '#5B7FFF' }}
-              thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
-            />
+
+      {/* Emotional Metric Scoring Method */}
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.rowTitle}>Emotional Metric Scoring</Text>
+            <Text style={styles.rowSub}>
+              {appSettings.emotionalMetricScoring === 's-curve'
+                ? 'S-curve: Uses a sigmoid function for scoring emotional metrics.'
+                : 'Default: Linear scoring for emotional metrics.'}
+            </Text>
           </View>
-        </LinearGradient>
-      ) : (
-        <View style={styles.card}>
-          <View style={styles.row}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.rowTitle}>Daily Reminder</Text>
-              <Text style={styles.rowSub}>
-                Get a notification to log your mood each day
-              </Text>
-            </View>
-            <Switch
-              value={settings.enabled}
-              onValueChange={handleToggle}
-              trackColor={{ false: '#ddd', true: '#5B7FFF' }}
-              thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
-            />
-          </View>
+          <Switch
+            value={appSettings.emotionalMetricScoring === 's-curve'}
+            onValueChange={async (value: boolean) => {
+              const updated = { ...appSettings, emotionalMetricScoring: value ? 's-curve' as 's-curve' : 'default' as 'default' };
+              setAppSettings(updated);
+              await saveAppSettings(updated);
+            }}
+            trackColor={{ false: '#ddd', true: '#5B7FFF' }}
+            thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
+          />
         </View>
-      )}
+      </View>
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.rowTitle}>Daily Reminder</Text>
+            <Text style={styles.rowSub}>
+              Get a notification to log your mood each day
+            </Text>
+          </View>
+          <Switch
+            value={settings.enabled}
+            onValueChange={handleToggle}
+            trackColor={{ false: '#ddd', true: '#5B7FFF' }}
+            thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
+          />
+        </View>
+      </View>
 
       {/* Time picker */}
       {settings.enabled && (
@@ -343,6 +357,28 @@ export default function SettingsScreen() {
           />
         </View>
       </View>
+
+      {/* Habit Scoring Method */}
+      {appSettings.habitsEnabled && (
+        <View style={styles.card}>
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowTitle}>Habit Scoring Method</Text>
+              <Text style={styles.rowSub}>
+                {appSettings.habitScoringMethod === 'intent'
+                  ? 'Intent mode: tap once for half credit (intent), again for full credit (done).'
+                  : 'Standard mode: habits are either done or not done.'}
+              </Text>
+            </View>
+            <Switch
+              value={appSettings.habitScoringMethod === 'intent'}
+              onValueChange={handleHabitScoringMethodToggle}
+              trackColor={{ false: '#ddd', true: '#5B7FFF' }}
+              thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
+            />
+          </View>
+        </View>
+      )}
 
       {/* Habits to Track */}
       <View style={styles.card}>
