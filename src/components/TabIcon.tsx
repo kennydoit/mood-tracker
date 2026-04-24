@@ -1,5 +1,6 @@
 import React from 'react';
 import { Platform, Text } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 interface TabIconProps {
   name: string;
@@ -40,6 +41,5 @@ export default function TabIcon({ name, size, color }: TabIconProps) {
   }
 
   // On native platforms, use vector-icons
-  const Ionicons = require('react-native-vector-icons/Ionicons').default;
   return <Ionicons name={name} size={size} color={color} />;
 }
