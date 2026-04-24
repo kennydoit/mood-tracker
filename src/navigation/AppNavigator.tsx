@@ -1,8 +1,8 @@
 import React from 'react';
 import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../theme';
+import TabIcon from '../components/TabIcon';
 
 import LogScreen from '../screens/LogScreen';
 import HistoryScreen from '../screens/HistoryScreen';
@@ -37,7 +37,7 @@ export default function AppNavigator() {
         screenOptions={({ route }) => ({
           tabBarIcon: ({ focused, color }) => {
             const iconName = iconMap[route.name][focused ? 'focused' : 'unfocused'];
-            return <Ionicons name={iconName} size={focused ? 28 : 24} color={color} />;
+            return <TabIcon name={iconName} size={focused ? 28 : 24} color={color} />;
           },
           tabBarActiveTintColor: colors.accent,
           tabBarInactiveTintColor: colors.textMuted,
