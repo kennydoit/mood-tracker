@@ -1,6 +1,5 @@
 import React, { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useResponsiveLayout } from '../utils/screenUtils';
 
 interface ResponsiveContainerProps {
@@ -8,8 +7,7 @@ interface ResponsiveContainerProps {
 }
 
 export default function ResponsiveContainer({ children }: ResponsiveContainerProps) {
-  const { screenWidth, shouldConstrainWidth, containerMaxWidth, paddingHorizontal } =
-    useResponsiveLayout();
+  const { screenWidth, containerMaxWidth, paddingHorizontal } = useResponsiveLayout();
 
   const containerWidth =
     screenWidth <= containerMaxWidth
@@ -17,9 +15,6 @@ export default function ResponsiveContainer({ children }: ResponsiveContainerPro
       : containerMaxWidth;
 
   const styles = StyleSheet.create({
-    safeArea: {
-      flex: 1,
-    },
     container: {
       flex: 1,
       width: containerWidth,
@@ -27,9 +22,5 @@ export default function ResponsiveContainer({ children }: ResponsiveContainerPro
     },
   });
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>{children}</View>
-    </SafeAreaView>
-  );
+  return <View style={styles.container}>{children}</View>;
 }
