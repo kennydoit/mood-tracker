@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "start": "expo start --port 8081 --clear",
+    "start": "node scripts/start-expo.js",
+    "start:tunnel": "node scripts/start-expo.js --tunnel",
+    "start:lan": "node scripts/start-expo.js --lan",
     "android": "expo start --android --port 8081 --clear",
     "ios": "expo start --ios --port 8081 --clear",
     "web": "expo start --web --port 8081 --clear"

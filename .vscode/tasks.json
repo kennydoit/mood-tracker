@@ -2,9 +2,17 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
+			"label": "Start Expo (Auto)",
+			"type": "shell",
+			"command": "npm run start",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
 			"label": "Start Expo (Tunnel)",
 			"type": "shell",
-			"command": "cmd /c start-expo-tunnel.cmd",
+			"command": "npm run start:tunnel",
 			"isBackground": true,
 			"problemMatcher": [],
 			"group": "build"
@@ -12,7 +20,7 @@
 		{
 			"label": "Start Expo (Tunnel + Clear Cache)",
 			"type": "shell",
-			"command": "\"C:\\Program Files\\nodejs\\node.exe\" node_modules\\expo\\bin\\cli start --tunnel --port 8081 --clear",
+			"command": "npm run start:tunnel -- --clear",
 			"isBackground": true,
 			"problemMatcher": [],
 			"group": "build"
@@ -20,7 +28,7 @@
 		{
 			"label": "Start Expo (LAN)",
 			"type": "shell",
-			"command": "cmd /c start-expo-lan.cmd",
+			"command": "npm run start:lan",
 			"isBackground": true,
 			"problemMatcher": [],
 			"group": "build"
