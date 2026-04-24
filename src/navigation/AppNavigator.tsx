@@ -18,11 +18,11 @@ export type RootTabParamList = {
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
-const iconMap: Record<string, { focused: string; unfocused: string }> = {
-  Log: { focused: 'heart', unfocused: 'heart-outline' },
-  History: { focused: 'book', unfocused: 'book-outline' },
-  Trends: { focused: 'trending-up', unfocused: 'trending-up' },
-  Settings: { focused: 'settings', unfocused: 'settings-outline' },
+const iconMap: Record<string, string> = {
+  Log: 'heart-outline',
+  History: 'book-outline',
+  Trends: 'trending-up',
+  Settings: 'settings-outline',
 };
 
 export default function AppNavigator() {
@@ -35,9 +35,9 @@ export default function AppNavigator() {
     <NavigationContainer theme={navTheme}>
       <Tab.Navigator
         screenOptions={({ route }) => ({
-          tabBarIcon: ({ focused, color }) => {
-            const iconName = iconMap[route.name][focused ? 'focused' : 'unfocused'];
-            return <TabIcon name={iconName} size={focused ? 28 : 24} color={color} />;
+          tabBarIcon: ({ color }) => {
+            const iconName = iconMap[route.name];
+            return <TabIcon name={iconName} size={24} color={color} />;
           },
           tabBarActiveTintColor: colors.accent,
           tabBarInactiveTintColor: colors.textMuted,
