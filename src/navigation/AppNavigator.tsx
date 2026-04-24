@@ -44,12 +44,13 @@ export default function AppNavigator() {
           tabBarStyle: {
             backgroundColor: colors.card,
             borderTopColor: colors.borderLight,
-            paddingBottom: 4,
-            height: 60,
+            paddingBottom: 8,
+            height: 75,
           },
           tabBarLabelStyle: {
-            fontSize: 11,
+            fontSize: 10,
             fontWeight: '600',
+            marginBottom: 4,
           },
           headerStyle: {
             backgroundColor: colors.card,

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { Platform, Text } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 interface TabIconProps {
   name: string;
@@ -8,28 +9,32 @@ interface TabIconProps {
 }
 
 /**
- * Tab icon component using emoji
- * Works reliably across all platforms (web, iOS, Android)
+ * Tab icon component using Ionicons on mobile, emoji on web
  */
 export default function TabIcon({ name, size, color }: TabIconProps) {
-  // Use outline-style emoji for all platforms
-  const emojiMap: Record<string, string> = {
-    'heart-outline': '❤️',
-    'book-outline': '📖',
-    'trending-up': '📈',
-    'settings-outline': '⚙️',
-  };
+  if (Platform.OS === 'web') {
+    // Use outline-style emoji for web since vector-icons fonts don't load
+    const emojiMap: Record<string, string> = {
+      'heart-outline': '❤️',
+      'book-outline': '📖',
+      'trending-up': '📈',
+      'settings-outline': '⚙️',
+    };
 
-  const emoji = emojiMap[name] || '•';
-  return (
-    <Text
-      style={{
-        fontSize: size,
-        color,
-        lineHeight: size,
-      }}
-    >
-      {emoji}
-    </Text>
-  );
+    const emoji = emojiMap[name] || '•';
+    return (
+      <Text
+        style={{
+          fontSize: size,
+          color,
+          lineHeight: size,
+        }}
+      >
+        {emoji}
+      </Text>
+    );
+  }
+
+  // On mobile (iOS/Android), use Ionicons vector graphics
+  return <Ionicons name={name} size={size} color={color} />;
 }
