@@ -338,6 +338,7 @@ export default function LogScreen() {
                       label={metric.label}
                       value={values[metric.key]}
                       color={metric.color}
+                      category={metric.category as 'positive' | 'negative'}
                       onChange={(v) => setValue(metric.key, v)}
                       startLabel={METRIC_LABELS[metric.key]?.start}
                       endLabel={METRIC_LABELS[metric.key]?.end}

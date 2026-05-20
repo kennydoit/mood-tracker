@@ -179,3 +179,75 @@ export function supportiveWellnessLabel(score: number): string {
   if (score >= 40) return 'Below Baseline';
   return 'Needing Support';
 }
+
+/**
+ * Generates a color for a metric score (1-10) using a custom 10-color gradient.
+ *
+ * For positive metrics: 1 = Red, ..., 10 = Indigo
+ * For negative metrics: 1 = Indigo (good - low value), ..., 10 = Red (bad - high value)
+ */
+export function metricScoreColor(
+  score: number,
+  category: 'positive' | 'negative',
+  baseColor: string = '#4CAF50'
+): string {
+  // Clamp score to [1, 10]
+  let s = Math.max(1, Math.min(10, score));
+
+  // For negative metrics, invert the score (so score 1 maps to color for 10, etc.)
+  if (category === 'negative') {
+    s = 11 - s;
+  }
+
+  // Define color stops for the gradient (positive/neutral direction)
+  const colorStops = [
+    { score: 1, color: [244, 67, 54] },        // Red (#F44336)
+    { score: 2, color: [204, 85, 0] },         // Burnt Orange (#CC5500)
+    { score: 3, color: [255, 163, 71] },       // Light Orange (#FFA347)
+    { score: 4, color: [255, 255, 0] },        // Yellow (#FFFF00)
+    { score: 5, color: [192, 192, 192] },      // Silver (#C0C0C0)
+    { score: 6, color: [192, 192, 192] },      // Silver (#C0C0C0)
+    { score: 7, color: [144, 238, 144] },      // Light Green (#90EE90)
+    { score: 8, color: [0, 128, 128] },        // Teal (#008080)
+    { score: 9, color: [0, 0, 255] },          // Blue (#0000FF)
+    { score: 10, color: [75, 0, 130] },        // Indigo (#4B0082)
+  ];
+
+  // Find the two stops s is between
+  let lower = colorStops[0];
+  let upper = colorStops[colorStops.length - 1];
+  for (let i = 0; i < colorStops.length - 1; i++) {
+    if (s >= colorStops[i].score && s <= colorStops[i + 1].score) {
+      lower = colorStops[i];
+      upper = colorStops[i + 1];
+      break;
+    }
+  }
+
+  // Linear interpolation between color stops
+  const range = upper.score - lower.score;
+  const t = range === 0 ? 0 : (s - lower.score) / range;
+  const interp = (a: number, b: number) => Math.round(a + (b - a) * t);
+  const [r, g, b] = [
+    interp(lower.color[0], upper.color[0]),
+    interp(lower.color[1], upper.color[1]),
+    interp(lower.color[2], upper.color[2]),
+  ];
+  return rgbToHex(r, g, b);
+}
+
+/** Helper: Convert hex color to RGB array */
+function hexToRgb(hex: string): number[] | null {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
+    : null;
+}
+
+/** Helper: Convert RGB to hex color */
+function rgbToHex(r: number, g: number, b: number): string {
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b)
+    .toString(16)
+    .slice(1)
+    .toUpperCase()}`;
+}

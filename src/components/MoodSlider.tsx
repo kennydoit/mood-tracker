@@ -6,17 +6,19 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useTheme, ThemeColors } from '../theme';
+import { metricScoreColor } from '../utils/wellness';
 
 interface Props {
   label: string;
   value: number | undefined;
   color: string;
+  category?: 'positive' | 'negative';
   onChange: (value: number | undefined) => void;
   startLabel?: string;
   endLabel?: string;
 }
 
-export default function MoodSlider({ label, value, color, onChange, startLabel = 'Not at all', endLabel = 'Extremely' }: Props) {
+export default function MoodSlider({ label, value, color, category = 'positive', onChange, startLabel = 'Not at all', endLabel = 'Extremely' }: Props) {
   const { colors } = useTheme();
   const styles = makeStyles(colors);
   // Override labels for Sadness
@@ -32,13 +34,14 @@ export default function MoodSlider({ label, value, color, onChange, startLabel =
       <View style={styles.buttonRow}>
         {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
           const selected = n === value;
+          const buttonColor = selected ? metricScoreColor(n, category, color) : undefined;
           return (
             <TouchableOpacity
               key={n}
               onPress={() => onChange(selected ? undefined : n)}
               style={[
                 styles.numButton,
-                selected && { backgroundColor: color, borderColor: color },
+                selected && { backgroundColor: buttonColor, borderColor: buttonColor },
               ]}
               activeOpacity={0.7}
             >
